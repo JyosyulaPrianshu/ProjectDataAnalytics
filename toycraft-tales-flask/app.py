@@ -30,6 +30,15 @@ ADMIN_USER = 'admin@example.com'
 ADMIN_PASS = 'password123'
 ADMIN_EMAIL = 'admin@example.com'
 
+# Define static resource IDs for each course (for progress calculation)
+DATA_ANALYTICS_RESOURCES = [
+    'gfg',  # GeeksforGeeks
+    'kaggle'  # Kaggle Learn
+]
+TABLEAU_RESOURCES = [
+    'tableau'  # Tableau Official
+]
+
 class NgrokManager:
     def __init__(self):
         self.tunnel_url = None
@@ -666,7 +675,16 @@ def course():
     if not db_manager.is_user_enrolled(user_email):
         flash('You must enroll in the course to access it.', 'error')
         return render_template('course.html', is_community_member=is_community_member, user=user_obj)
-    return render_template('course.html', is_community_member=is_community_member, user=user_obj)
+    # Calculate progress for each course section
+    analytics_progress = db_manager.get_course_progress_percentage(user_email, 'data_analytics', DATA_ANALYTICS_RESOURCES)
+    tableau_progress = db_manager.get_course_progress_percentage(user_email, 'tableau', TABLEAU_RESOURCES)
+    return render_template(
+        'course.html',
+        is_community_member=is_community_member,
+        user=user_obj,
+        analytics_progress=analytics_progress,
+        tableau_progress=tableau_progress
+    )
 
 @app.route('/api/mark-resource-opened', methods=['POST'])
 @login_required
