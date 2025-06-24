@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+{% block title %}ToyCraft Tales | Home{% endblock %}
+{% block content %}
+{% if show_course_banner %}
+  <div class="alert alert-info alert-dismissible fade show d-flex align-items-center justify-content-between" role="alert" style="font-size:1.1rem;">
+    <div>
+      <strong>🎓 New Learning Course!</strong> A new course is available for community members.
+    </div>
+    <button class="btn btn-success btn-sm ms-3" data-bs-toggle="modal" data-bs-target="#enrollModal">Enroll Now</button>
+  </div>
+  <!-- Enroll Modal -->
+  <div class="modal fade" id="enrollModal" tabindex="-1" aria-labelledby="enrollModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg" style="border-radius: 1.5rem;">
+        <div class="modal-body p-5 bg-white position-relative text-center">
+          <h2 class="fw-bold mb-3 text-success">Enroll in New Learning Course</h2>
+          <p class="mb-4">Unlock exclusive content and start your learning journey with ToyCraft Tales!</p>
+          <form method="POST" action="/enroll">
+            <button type="submit" class="btn btn-primary btn-lg w-100">Enroll Now</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endif %}
+<!-- Hero Section -->
+<div class="hero-section">
+  <div class="hero-background">
+    <div class="floating-shapes">
+      <div class="shape shape-1"></div>
+      <div class="shape shape-2"></div>
+      <div class="shape shape-3"></div>
+      <div class="shape shape-4"></div>
+    </div>
+  </div>
+  <div class="container hero-content">
+    <div class="hero-badge fade-in-up">
+      <span class="badge-icon">🎯</span>
+      <span class="badge-text">Data-Driven Insights</span>
+    </div>
+    <h1 class="hero-title typing-animation">ToyCraft Tales</h1>
+    <h2 class="hero-subtitle fade-in-up delay-1">
+      Tableau's Vision into Toy Manufacturing Data
+    </h2>
+    <p class="hero-description fade-in-up delay-2">
+      Employ Tableau to delve into Toy Manufacturers' data, uncovering
+      market trends, production patterns, and consumer preferences. Craft
+      interactive visualizations to guide strategic decisions and enhance
+      market competitiveness.
+    </p>
+    <div class="hero-highlights fade-in-up delay-3">
+      <div class="highlight-item">
+        <div class="highlight-icon">📈</div>
+        <div class="highlight-text">Market Trend Analysis</div>
+      </div>
+      <div class="highlight-item">
+        <div class="highlight-icon">👥</div>
+        <div class="highlight-text">Consumer Behavior Insights</div>
+      </div>
+      <div class="highlight-item">
+        <div class="highlight-icon">🌍</div>
+        <div class="highlight-text">Regional Performance</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Navigation Cards Section -->
+<div class="navigation-section">
+  <div class="container">
+    <h3 class="section-title text-center mb-5">
+      Explore Interactive Visualizations
+    </h3>
+    <div class="row g-4">
+      <!-- Dashboard Card -->
+      <div class="col-lg-4 col-md-6">
+        <div class="nav-card dashboard-card" data-tilt>
+          <div class="card-background">
+            <div class="card-pattern"></div>
+          </div>
+          <div class="card-content">
+            <div class="card-icon">📊</div>
+            <h4 class="card-title">Comprehensive Dashboard</h4>
+            <p class="card-description">
+              View integrated analytics covering market trends, production
+              patterns, and consumer preferences in one comprehensive
+              overview.
+            </p>
+            <div class="card-features">
+              <span class="feature-tag">Market Analysis</span>
+              <span class="feature-tag">Real-time Data</span>
+              <span class="feature-tag">Interactive Filters</span>
+            </div>
+            <a href="/dashboard" class="nav-btn btn-dashboard">
+              <span class="btn-text">View Dashboard</span>
+              <span class="btn-icon">→</span>
+            </a>
+          </div>
+        </div>
+      </div>
+      <!-- Charts Card -->
+      <div class="col-lg-4 col-md-6">
+        <div class="nav-card charts-card" data-tilt>
+          <div class="card-background">
+            <div class="card-pattern"></div>
+          </div>
+          <div class="card-content">
+            <div class="card-icon">📈</div>
+            <h4 class="card-title">Individual Charts</h4>
+            <p class="card-description">
+              Explore detailed visualizations analyzing seasonal trends,
+              demographic preferences, and regional performance across toy
+              categories.
+            </p>
+            <div class="card-features">
+              <span class="feature-tag">Seasonal Analysis</span>
+              <span class="feature-tag">Demographics</span>
+              <span class="feature-tag">Regional Data</span>
+            </div>
+            <a href="/charts" class="nav-btn btn-charts">
+              <span class="btn-text">View Charts</span>
+              <span class="btn-icon">→</span>
+            </a>
+          </div>
+        </div>
+      </div>
+      <!-- Story Card -->
+      <div class="col-lg-4 col-md-12">
+        <div class="nav-card story-card" data-tilt>
+          <div class="card-background">
+            <div class="card-pattern"></div>
+          </div>
+          <div class="card-content">
+            <div class="card-icon">📖</div>
+            <h4 class="card-title">Data Story</h4>
+            <p class="card-description">
+              Follow the narrative journey through toy manufacturing
+              insights, from market evolution to consumer behavior patterns
+              and strategic recommendations.
+            </p>
+            <div class="card-features">
+              <span class="feature-tag">Narrative Flow</span>
+              <span class="feature-tag">Key Insights</span>
+              <span class="feature-tag">Strategic Guide</span>
+            </div>
+            <a href="/story" class="nav-btn btn-story">
+              <span class="btn-text">View Story</span>
+              <span class="btn-icon">→</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Contact Section -->
+<div class="contact-section">
+  <div class="container">
+    <div class="contact-header text-center">
+      <h3 class="contact-title">✨ Join Our Community</h3>
+      <p class="contact-subtitle">
+        Connect with data enthusiasts and get exclusive access to insights
+        and updates
+      </p>
+    </div>
+    <div class="row justify-content-center">
+      <div class="col-lg-6 col-md-8">
+        <div class="contact-form-container">
+          <div class="contact-form-wrapper">
+            <form action="{{ url_for('submit_contact') }}" method="POST" class="contact-form" id="contactForm">
+              <div class="form-group">
+                <div class="input-container">
+                  <input type="text" id="name" name="name" class="form-input" required minlength="2" maxlength="50" placeholder=" "/>
+                  <label for="name" class="form-label">Full Name</label>
+                  <div class="input-icon">👤</div>
+                  <div class="input-feedback" id="name-feedback"></div>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="input-container">
+                  <input type="email" id="email" name="email" class="form-input" required placeholder=" "/>
+                  <label for="email" class="form-label">Email Address</label>
+                  <div class="input-icon">📧</div>
+                  <div class="input-feedback" id="email-feedback"></div>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="input-container">
+                  <input type="tel" id="phone" name="phone" class="form-input" required pattern="[0-9]{10}" maxlength="10" placeholder=" "/>
+                  <label for="phone" class="form-label">Phone Number (10 digits)</label>
+                  <div class="input-icon">📱</div>
+                  <div class="input-feedback" id="phone-feedback"></div>
+                </div>
+              </div>
+              <div class="form-group">
+                <button type="submit" class="submit-btn" id="submitBtn">
+                  <span class="btn-text">🚀 Join Community</span>
+                  <span class="btn-loader" style="display: none">
+                    <span class="spinner"></span>
+                    Processing...
+                  </span>
+                  <span class="btn-icon">→</span>
+                </button>
+              </div>
+              <div class="form-footer">
+                <p class="privacy-text">
+                  <i class="fas fa-shield-alt"></i>
+                  Your information is secure and will only be used for
+                  community updates.
+                </p>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Login/Signup/Skip Modal -->
+<div class="modal fade" id="authModal" tabindex="-1" aria-labelledby="authModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 1.5rem;">
+      <div class="modal-body p-5 bg-white position-relative">
+        <div class="text-center mb-4">
+          <span class="d-inline-block bg-primary bg-gradient rounded-circle p-3 mb-2">
+            <span style="font-size:2.2rem; color: #fff;">🎲</span>
+          </span>
+          <h2 class="fw-bold mb-0" style="color: #2e7d32; letter-spacing: 1px;">ToyCraft Tales</h2>
+          <div class="text-muted mb-2" style="font-size:1.1rem;">Sign in or create your account</div>
+        </div>
+        <ul class="nav nav-tabs mb-4 justify-content-center" id="authTab" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login" type="button" role="tab" aria-controls="login" aria-selected="true">Login</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="signup-tab" data-bs-toggle="tab" data-bs-target="#signup" type="button" role="tab" aria-controls="signup" aria-selected="false">Sign Up</button>
+          </li>
+        </ul>
+        <div class="tab-content" id="authTabContent">
+          <!-- Login Tab -->
+          <div class="tab-pane fade show active" id="login" role="tabpanel" aria-labelledby="login-tab">
+            <form method="POST" action="/">
+              <input type="hidden" name="form_type" value="login">
+              <div class="mb-3">
+                <label for="login-email" class="form-label">Email</label>
+                <input type="email" class="form-control form-control-lg" id="login-email" name="email" placeholder="Enter your email" required autofocus>
+              </div>
+              <div class="mb-3">
+                <label for="login-password" class="form-label">Password</label>
+                <input type="password" class="form-control form-control-lg" id="login-password" name="password" placeholder="Enter your password" required>
+              </div>
+              <button type="submit" class="btn btn-success w-100 py-2 fw-bold">Login</button>
+            </form>
+          </div>
+          <!-- Signup Tab -->
+          <div class="tab-pane fade" id="signup" role="tabpanel" aria-labelledby="signup-tab">
+            <form method="POST" action="/">
+              <input type="hidden" name="form_type" value="signup">
+              <div class="mb-3">
+                <label for="signup-email" class="form-label">Email</label>
+                <input type="email" class="form-control form-control-lg" id="signup-email" name="email" placeholder="Enter your email" required>
+              </div>
+              <div class="mb-3">
+                <label for="signup-password" class="form-label">Password</label>
+                <input type="password" class="form-control form-control-lg" id="signup-password" name="password" placeholder="Create a password (min 6 chars)" required>
+              </div>
+              <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Sign Up</button>
+            </form>
+          </div>
+        </div>
+        <div class="text-center mt-4">
+          <a href="/skip" class="btn btn-outline-secondary w-100 py-2">Skip Now</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if show_auth %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var authModal = new bootstrap.Modal(document.getElementById('authModal'));
+    authModal.show();
+  });
+</script>
+{% endif %}
+{% endblock %}
