@@ -35,7 +35,7 @@ class DatabaseManager:
             'port': Config.DB_PORT
         }
         self.init_database()
-
+    
     def get_connection(self):
         try:
             connection = psycopg2.connect(**self.config)
@@ -43,7 +43,7 @@ class DatabaseManager:
         except Exception as e:
             print(f"❌ Error connecting to Postgres: {e}")
             return None
-
+    
     def init_database(self):
         connection = None
         cursor = None
@@ -98,7 +98,7 @@ class DatabaseManager:
                 cursor.close()
             if connection:
                 connection.close()
-
+    
     def add_contact(self, name, email, phone, ip_address=None, user_agent=None):
         connection = None
         cursor = None
@@ -123,7 +123,7 @@ class DatabaseManager:
                 cursor.close()
             if connection:
                 connection.close()
-
+    
     def get_all_contacts(self):
         connection = None
         cursor = None
@@ -144,7 +144,7 @@ class DatabaseManager:
                 cursor.close()
             if connection:
                 connection.close()
-
+    
     def get_contact_count(self):
         connection = None
         cursor = None
@@ -310,6 +310,18 @@ class DatabaseManager:
                 cursor.close()
             if connection:
                 connection.close()
+
+    def get_course_progress_percentage(self, user_email, course_id, all_resource_ids):
+        """
+        Returns the percentage of resources opened by the user for a given course.
+        all_resource_ids: list of all resource_ids for the course (from static definition)
+        """
+        if not all_resource_ids:
+            return 0
+        opened = set(self.get_course_progress(user_email, course_id))
+        total = len(all_resource_ids)
+        completed = len([rid for rid in all_resource_ids if rid in opened])
+        return int((completed / total) * 100) if total > 0 else 0
 
 # Initialize database manager
 db_manager = DatabaseManager()
