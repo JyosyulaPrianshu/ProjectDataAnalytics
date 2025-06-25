@@ -53,14 +53,6 @@
     border: 1px solid #e5e7eb;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   }
-  .question-number {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
   .question-text {
     font-size: 1.2rem;
     font-weight: 600;
@@ -174,9 +166,24 @@
     text-decoration: none;
     font-weight: 600;
     transition: background 0.2s;
+    margin-right: 1rem;
   }
   .back-btn:hover {
     background: #4b5563;
+    color: #ffffff;
+  }
+  .retake-btn {
+    display: inline-block;
+    background: #3b82f6;
+    color: #ffffff;
+    padding: 0.8rem 1.5rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background 0.2s;
+  }
+  .retake-btn:hover {
+    background: #2563eb;
     color: #ffffff;
   }
 </style>
@@ -198,7 +205,7 @@
     {% for question in quiz.questions %}
       <div class="quiz-question">
         <div class="question-text">Q{{ loop.index }}. {{ question.question }}</div>
-        <div class="options">
+        <div class="options-container">
           {% for option in question.options %}
             <label class="option">
               <input type="radio" name="q{{ loop.parent.index0 }}" value="{{ loop.index0 }}" required>
@@ -227,9 +234,13 @@ document.addEventListener('DOMContentLoaded', function() {
     option.addEventListener('click', function() {
       const radio = this.querySelector('input[type="radio"]');
       const questionContainer = this.closest('.quiz-question');
+      
+      // Remove selected class from all options in this question
       questionContainer.querySelectorAll('.option').forEach(opt => {
         opt.classList.remove('selected');
       });
+      
+      // Add selected class to this option
       this.classList.add('selected');
       radio.checked = true;
     });
@@ -238,17 +249,33 @@ document.addEventListener('DOMContentLoaded', function() {
   // Handle form submission
   document.getElementById('quizForm').addEventListener('submit', function(e) {
     e.preventDefault();
+    
     const submitBtn = document.getElementById('submitBtn');
     submitBtn.disabled = true;
     submitBtn.textContent = 'Submitting...';
+    
+    // Collect answers
     const answers = {};
     const questions = document.querySelectorAll('.quiz-question');
+    let allAnswered = true;
+    
     questions.forEach((question, index) => {
       const selectedOption = question.querySelector('input[type="radio"]:checked');
       if (selectedOption) {
         answers[index] = parseInt(selectedOption.value);
+      } else {
+        allAnswered = false;
       }
     });
+    
+    if (!allAnswered) {
+      alert('Please answer all questions before submitting.');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Quiz';
+      return;
+    }
+    
+    // Submit quiz
     fetch('/api/submit-quiz', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -262,7 +289,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (data.success) {
         showResult(data);
       } else {
-        alert('Error submitting quiz: ' + data.error);
+        alert('Error submitting quiz: ' + (data.error || 'Unknown error'));
         submitBtn.disabled = false;
         submitBtn.textContent = 'Submit Quiz';
       }
@@ -280,18 +307,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const resultContent = document.getElementById('resultContent');
     const quizForm = document.getElementById('quizForm');
 
-    let resultClass = data.passed ? 'result-passed' : 'result-failed';
-    let resultIcon = data.passed ? '🎉' : '📚';
-    let resultTitle = data.passed ? 'Congratulations! You Passed!' : 'Keep Learning!';
-    let resultMessage = data.passed 
+    const resultClass = data.passed ? 'result-passed' : 'result-failed';
+    const resultIcon = data.passed ? '🎉' : '📚';
+    const resultTitle = data.passed ? 'Congratulations! You Passed!' : 'Keep Learning!';
+    const resultMessage = data.passed 
       ? `You've earned ${data.points_reward || 10} points! Keep up the great work!`
       : `Don't worry! Review the material and try again. You can do it!`;
 
-    let retakeButton = '';
-    if (!data.passed) {
-      // Show retake button if failed
-      retakeButton = `<a href="/course" class="submit-btn" style="margin-top:1.5rem;">Retake Assessment</a>`;
-    }
+    const retakeButton = data.passed ? '' : 
+      `<a href="${window.location.href}" class="retake-btn">Retake Quiz</a>`;
 
     resultContent.innerHTML = `
       <div class="${resultClass}">
@@ -302,19 +326,15 @@ document.addEventListener('DOMContentLoaded', function() {
           ${resultMessage}
           ${data.total_points ? `<br><br><strong>Total Points: ${data.total_points}</strong>` : ''}
         </div>
-        ${retakeButton}
+        <div style="margin-top: 1.5rem;">
+          ${retakeButton}
+        </div>
       </div>
     `;
 
     quizForm.style.display = 'none';
     resultContainer.style.display = 'block';
-
-    // If passed, add a hint for the My Courses page to tick and disable the quiz option
-    if (data.passed) {
-      // You should update the My Courses (course.html) page to visually tick and disable the quiz option for this resource.
-      // This can be done by checking the user's quiz status in the backend and rendering the button as disabled/ticked if passed.
-    }
   }
 });
 </script>
-{% endblock %} 
+{% endblock %}
