@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% block title %}My Rewards | ToyCraft Tales{% endblock %}
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  body.rewards-bg {
+    background: #f8fafc;
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+  }
+  .rewards-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+  .rewards-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+  .rewards-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #1f2937;
+    margin-bottom: 1rem;
+  }
+  .rewards-subtitle {
+    font-size: 1.2rem;
+    color: #6b7280;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+  }
+  .stat-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb;
+  }
+  .stat-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+  .stat-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+  }
+  .stat-label {
+    font-size: 1.1rem;
+    color: #6b7280;
+    font-weight: 600;
+  }
+  .achievement-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 2px solid #3b82f6;
+    margin-bottom: 3rem;
+  }
+  .achievement-level {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    color: #1f2937;
+  }
+  .achievement-message {
+    font-size: 1.2rem;
+    color: #6b7280;
+  }
+  .section-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+  .tableau-uploads-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
+  .tableau-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb;
+    transition: transform 0.2s ease;
+  }
+  .tableau-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+  .tableau-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  .tableau-icon {
+    font-size: 2rem;
+    margin-right: 1rem;
+  }
+  .tableau-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #1f2937;
+  }
+  .tableau-description {
+    color: #6b7280;
+    margin-bottom: 1rem;
+  }
+  .tableau-date {
+    font-size: 0.9rem;
+    color: #6b7280;
+    margin-top: 0.5rem;
+  }
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #6b7280;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb;
+  }
+  .empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+  .back-btn {
+    display: inline-block;
+    background: #3b82f6;
+    color: #ffffff;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    margin-top: 2rem;
+    transition: all 0.2s ease;
+  }
+  .back-btn:hover {
+    background: #2563eb;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  }
+  .upload-btn {
+    display: inline-block;
+    background: #10b981;
+    color: #ffffff;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    margin-top: 1rem;
+    transition: all 0.2s ease;
+  }
+  .upload-btn:hover {
+    background: #059669;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+  }
+</style>
+
+<div class="rewards-container">
+  <div class="rewards-header">
+    <h1 class="rewards-title">🎉 My Learning Rewards</h1>
+    <p class="rewards-subtitle">Track your progress and celebrate your achievements!</p>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">⭐</div>
+      <div class="stat-value">{{ total_points }}</div>
+      <div class="stat-label">Total Points Earned</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🏆</div>
+      <div class="stat-value">{{ level }}</div>
+      <div class="stat-label">Achievement Level</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📊</div>
+      <div class="stat-value">{{ tableau_uploads|length }}</div>
+      <div class="stat-label">Tableau Dashboards</div>
+    </div>
+  </div>
+
+  <div class="achievement-card">
+    <div class="achievement-level">{{ level }}</div>
+    <div class="achievement-message">{{ level_message }}</div>
+  </div>
+
+  <h2 class="section-title">📊 My Tableau Dashboards</h2>
+  {% if tableau_uploads %}
+  <div class="tableau-uploads-grid">
+    {% for upload in tableau_uploads %}
+    <div class="tableau-card">
+      <div class="tableau-header">
+        <div class="tableau-icon">📊</div>
+        <div>
+          <div class="tableau-title">{{ upload.dashboard_title }}</div>
+          <div class="tableau-date">Uploaded: {{ upload.uploaded_at.strftime('%B %d, %Y') }}</div>
+        </div>
+      </div>
+      <div class="tableau-description">{{ upload.dashboard_description }}</div>
+      <a href="{{ upload.file_url }}" target="_blank" class="back-btn" style="margin-top: 1rem; font-size: 0.9rem; padding: 0.5rem 1rem;">View Dashboard</a>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">📊</div>
+    <h3>No Tableau Dashboards Yet</h3>
+    <p>Upload your Tableau dashboard to earn extra points and showcase your skills!</p>
+    <a href="{{ url_for('upload_tableau') }}" class="upload-btn">Upload Dashboard</a>
+  </div>
+  {% endif %}
+
+  <div style="text-align: center; margin-top: 3rem;">
+    <a href="{{ url_for('course') }}" class="back-btn">Back to Course</a>
+    {% if not tableau_uploads %}
+    <a href="{{ url_for('upload_tableau') }}" class="upload-btn" style="margin-left: 1rem;">Upload Tableau Dashboard</a>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+document.body.classList.add('rewards-bg');
+</script>
+{% endblock %} 
