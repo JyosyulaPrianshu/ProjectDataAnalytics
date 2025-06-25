@@ -279,18 +279,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const resultContainer = document.getElementById('resultContainer');
     const resultContent = document.getElementById('resultContent');
     const quizForm = document.getElementById('quizForm');
+
     let resultClass = data.passed ? 'result-passed' : 'result-failed';
     let resultIcon = data.passed ? '🎉' : '📚';
     let resultTitle = data.passed ? 'Congratulations! You Passed!' : 'Keep Learning!';
     let resultMessage = data.passed 
       ? `You've earned ${data.points_reward || 10} points! Keep up the great work!`
       : `Don't worry! Review the material and try again. You can do it!`;
-    if (data.course_completed && data.achievement_unlocked) {
-      resultClass = 'result-passed';
-      resultIcon = '🏆';
-      resultTitle = 'Achievement Unlocked!';
-      resultMessage = data.message;
+
+    let retakeButton = '';
+    if (!data.passed) {
+      // Show retake button if failed
+      retakeButton = `<a href="/course" class="submit-btn" style="margin-top:1.5rem;">Retake Assessment</a>`;
     }
+
     resultContent.innerHTML = `
       <div class="${resultClass}">
         <div class="result-title">${resultIcon} ${resultTitle}</div>
@@ -300,10 +302,18 @@ document.addEventListener('DOMContentLoaded', function() {
           ${resultMessage}
           ${data.total_points ? `<br><br><strong>Total Points: ${data.total_points}</strong>` : ''}
         </div>
+        ${retakeButton}
       </div>
     `;
+
     quizForm.style.display = 'none';
     resultContainer.style.display = 'block';
+
+    // If passed, add a hint for the My Courses page to tick and disable the quiz option
+    if (data.passed) {
+      // You should update the My Courses (course.html) page to visually tick and disable the quiz option for this resource.
+      // This can be done by checking the user's quiz status in the backend and rendering the button as disabled/ticked if passed.
+    }
   }
 });
 </script>
