@@ -40,6 +40,12 @@ TABLEAU_RESOURCES = [
     'tableau'  # Tableau Official
 ]
 
+# Course resource mapping for easy access
+COURSE_RESOURCES = {
+    'data_analytics': DATA_ANALYTICS_RESOURCES,
+    'tableau': TABLEAU_RESOURCES
+}
+
 class NgrokManager:
     def __init__(self):
         self.tunnel_url = None
@@ -355,6 +361,16 @@ def initialize_sample_quizzes():
         print(f"❌ Error initializing quizzes: {e}")
         print("💡 You can manually initialize quizzes by visiting /admin/init-quizzes (admin only)")
 
+# Protect routes decorator
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('logged_in'):
+            flash('Please log in to access this page.', 'error')
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     user_email = session.get('user_email')
@@ -365,6 +381,7 @@ def index():
             if contact.email and contact.email.lower() == user_email:
                 is_community_member = True
                 break
+    
     # If already logged in or skipped, always show main homepage content
     if session.get('logged_in') or session.get('skipped'):
         show_course_banner = False
@@ -373,10 +390,12 @@ def index():
             if is_community_member and not db_manager.is_user_enrolled(user_email):
                 show_course_banner = True
         return render_template('index.html', show_auth=False, show_course_banner=show_course_banner, is_community_member=is_community_member)
+    
     if request.method == 'POST':
         form_type = request.form.get('form_type')
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '').strip()
+        
         if form_type == 'login':
             if db_manager.check_user_credentials(email, password):
                 session['logged_in'] = True
@@ -399,6 +418,7 @@ def index():
                     session.pop('skipped', None)
                     flash('Signup successful! You are now logged in.', 'success')
                     return redirect(url_for('index'))
+    
     # Only show auth card if not logged in and not skipped
     return render_template('index.html', show_auth=True, show_course_banner=False, is_community_member=is_community_member)
 
@@ -493,16 +513,6 @@ def submit_contact():
         flash('An unexpected error occurred. Please try again later.', 'error')
     
     return redirect(url_for('index'))
-
-# Protect /contacts route
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not session.get('logged_in'):
-            flash('Please log in to access this page.', 'error')
-            return redirect(url_for('index'))
-        return f(*args, **kwargs)
-    return decorated_function
 
 @app.route('/contacts')
 @login_required
@@ -618,10 +628,9 @@ def dashboard():
                 break
     return render_template('dashboard.html', is_community_member=is_community_member)
 
-# Add this route to app.py for testing
 @app.route('/test-email')
 def test_email():
-    success = send_welcome_email("Prianshu", "jyosyulaprianshu@gmail.com")
+    success = send_welcome_email("Test User", "test@example.com")
     return f"Email test: {'Success' if success else 'Failed'}"
 
 @app.route('/charts')
@@ -703,7 +712,7 @@ def display_startup_info():
     print(f"   📊 Admin Panel: http://{ip}:5000/contacts")
     
     print(f"\n💾 Database Status:")
-    print(f"   📊 MySQL: {'✅ Connected' if db_connected else '❌ Disconnected'}")
+    print(f"   📊 PostgreSQL: {'✅ Connected' if db_connected else '❌ Disconnected'}")
     print(f"   📝 Contact Count: {db_manager.get_contact_count() if db_connected else 'N/A'}")
     
     print(f"\n📧 Email Status:")
@@ -721,11 +730,13 @@ def send_course_email():
     if session.get('user_email') != ADMIN_EMAIL:
         flash('You are not authorized to send course emails.', 'error')
         return redirect(url_for('index'))
+    
     contacts = db_manager.get_all_contacts()
     sent_count = 0
     for contact in contacts:
         if not contact.email:
             continue
+        
         enroll_link = url_for('enroll', email=contact.email, _external=True)
         subject = "🎓 New Learning Course Available!"
         html_body = f"""
@@ -736,7 +747,7 @@ def send_course_email():
                 <p style='font-size: 18px; color: #666; text-align: center;'>Hi {contact.name or contact.email}! 👋</p>
                 <div style='background: #e8f5e9; padding: 24px; border-radius: 10px; margin: 24px 0;'>
                     <h2 style='color: #2e7d32;'>Ready to learn something new?</h2>
-                    <p>We are excited to announce a new learning course for our ToyCraft Tales community members. Click below to enroll and unlock exclusive content!</p>
+                     <p>We are excited to announce a new learning course for our ToyCraft Tales community members. Click below to enroll and unlock exclusive content!</p>
                     <div style='text-align: center; margin: 30px 0;'>
                         <a href='{enroll_link}' style='display: inline-block; background: #43a047; color: #fff; padding: 16px 32px; border-radius: 8px; font-size: 1.2rem; text-decoration: none; font-weight: bold;'>Enroll Now</a>
                     </div>
@@ -748,11 +759,13 @@ def send_course_email():
         </body>
         </html>
         """
+        
         msg = MIMEMultipart()
         msg['From'] = f"{EMAIL_CONFIG['FROM_NAME']} <{EMAIL_CONFIG['EMAIL']}>"
         msg['To'] = contact.email
         msg['Subject'] = subject
         msg.attach(MIMEText(html_body, 'html'))
+        
         try:
             server = smtplib.SMTP(EMAIL_CONFIG['SMTP_SERVER'], EMAIL_CONFIG['SMTP_PORT'])
             server.starttls()
@@ -762,6 +775,7 @@ def send_course_email():
             sent_count += 1
         except Exception as e:
             print(f"❌ Failed to send course email to {contact.email}: {e}")
+    
     flash(f'Course announcement sent to {sent_count} community members.', 'success')
     return redirect(url_for('index'))
 
@@ -774,31 +788,40 @@ def enroll():
         if not session.get('logged_in') or session.get('user_email') != email_param:
             flash('Please log in with your community account to enroll.', 'info')
             return redirect(url_for('index'))
+        
         user_email = session.get('user_email')
         contacts = db_manager.get_all_contacts()
         is_community_member = any(contact.email and contact.email.lower() == user_email for contact in contacts)
+        
         if not is_community_member:
             flash('You must join the community to enroll.', 'error')
             return redirect(url_for('index'))
+        
         if db_manager.is_user_enrolled(user_email):
             flash('You are already enrolled in the course.', 'info')
             return redirect(url_for('index'))
+        
         db_manager.enroll_user(user_email)
         flash('You have successfully enrolled in the new learning course!', 'success')
         return redirect(url_for('course'))
+    
     # POST from modal
     if not session.get('logged_in'):
         flash('You must be logged in to enroll.', 'error')
         return redirect(url_for('index'))
+    
     user_email = session.get('user_email')
     contacts = db_manager.get_all_contacts()
     is_community_member = any(contact.email and contact.email.lower() == user_email for contact in contacts)
+    
     if not is_community_member:
         flash('You must join the community to enroll.', 'error')
         return redirect(url_for('index'))
+    
     if db_manager.is_user_enrolled(user_email):
         flash('You are already enrolled in the course.', 'info')
         return redirect(url_for('index'))
+    
     db_manager.enroll_user(user_email)
     flash('You have successfully enrolled in the new learning course!', 'success')
     return redirect(url_for('course'))
@@ -809,27 +832,32 @@ def course():
     user_email = session.get('user_email')
     is_community_member = False
     user_obj = {'name': None, 'email': user_email}
+    
     contacts = db_manager.get_all_contacts()
     for contact in contacts:
         if contact.email and contact.email.lower() == user_email:
             is_community_member = True
             user_obj = {'name': contact.name, 'email': contact.email}
             break
+    
     if not is_community_member:
         flash('You must join the community to access the course.', 'error')
         return render_template('course.html', is_community_member=is_community_member, user=user_obj)
+    
     if not db_manager.is_user_enrolled(user_email):
         flash('You must enroll in the course to access it.', 'error')
         return render_template('course.html', is_community_member=is_community_member, user=user_obj)
+    
     # Calculate progress for each course section
     analytics_progress = db_manager.get_course_progress_percentage(user_email, 'data_analytics', DATA_ANALYTICS_RESOURCES)
     tableau_progress = db_manager.get_course_progress_percentage(user_email, 'tableau', TABLEAU_RESOURCES)
+    
     # Get user's total points for rewards banner
     total_points = db_manager.get_user_total_points(user_email)
 
-    # Quiz pass status for each resource
-    analytics_quiz_status = {rid: db_manager.has_passed_quiz(user_email, 'data_analytics', rid) for rid in DATA_ANALYTICS_RESOURCES}
-    tableau_quiz_status = {rid: db_manager.has_passed_quiz(user_email, 'tableau', rid) for rid in TABLEAU_RESOURCES}
+    # Quiz pass status for each resource - FIXED VERSION
+    analytics_quiz_status = db_manager.get_quiz_status_for_course(user_email, 'data_analytics')
+    tableau_quiz_status = db_manager.get_quiz_status_for_course(user_email, 'tableau')
 
     return render_template(
         'course.html',
@@ -845,117 +873,175 @@ def course():
 @app.route('/api/mark-resource-opened', methods=['POST'])
 @login_required
 def mark_resource_opened():
-    data = request.get_json()
-    course_id = data.get('course_id')
-    resource_id = data.get('resource_id')
-    user_email = session.get('user_email')
-    if not course_id or not resource_id:
-        return jsonify({'success': False, 'error': 'Missing course_id or resource_id'}), 400
-    success = db_manager.mark_resource_opened(user_email, course_id, resource_id)
-    return jsonify({'success': success})
+    try:
+        data = request.get_json()
+        course_id = data.get('course_id')
+        resource_id = data.get('resource_id')
+        user_email = session.get('user_email')
+        
+        if not course_id or not resource_id:
+            return jsonify({'success': False, 'error': 'Missing course_id or resource_id'}), 400
+        
+        success = db_manager.mark_resource_opened(user_email, course_id, resource_id)
+        return jsonify({'success': success})
+    except Exception as e:
+        print(f"❌ Error marking resource opened: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/course-progress', methods=['GET'])
 @login_required
 def get_course_progress():
-    course_id = request.args.get('course_id')
-    user_email = session.get('user_email')
-    if not course_id:
-        return jsonify({'success': False, 'error': 'Missing course_id'}), 400
-    opened_resources = db_manager.get_course_progress(user_email, course_id)
-    return jsonify({'success': True, 'opened_resources': opened_resources})
+    try:
+        course_id = request.args.get('course_id')
+        user_email = session.get('user_email')
+        
+        if not course_id:
+            return jsonify({'success': False, 'error': 'Missing course_id'}), 400
+        
+        opened_resources = db_manager.get_course_progress(user_email, course_id)
+        return jsonify({'success': True, 'opened_resources': opened_resources})
+    except Exception as e:
+        print(f"❌ Error getting course progress: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/quiz/<course_id>/<resource_id>')
 @login_required
 def take_quiz(course_id, resource_id):
-    user_email = session.get('user_email')
-    quiz = db_manager.get_quiz_by_resource(course_id, resource_id)
-    if not quiz:
-        flash('No quiz available for this resource.', 'info')
+    try:
+        user_email = session.get('user_email')
+        quiz = db_manager.get_quiz_by_resource(course_id, resource_id)
+        
+        if not quiz:
+            flash('No quiz available for this resource.', 'info')
+            return redirect(url_for('course'))
+        
+        # Parse questions from JSON if needed - FIXED VERSION
+        try:
+            if isinstance(quiz['questions'], str):
+                quiz['questions'] = json.loads(quiz['questions'])
+        except (json.JSONDecodeError, TypeError) as e:
+            print(f"❌ Error parsing quiz questions: {e}")
+            flash('Quiz format error. Please contact support.', 'error')
+            return redirect(url_for('course'))
+        
+        return render_template('quiz.html', quiz=quiz, course_id=course_id, resource_id=resource_id)
+    except Exception as e:
+        print(f"❌ Error loading quiz: {e}")
+        flash('Error loading quiz. Please try again.', 'error')
         return redirect(url_for('course'))
-    return render_template('quiz.html', quiz=quiz, course_id=course_id, resource_id=resource_id)
 
 @app.route('/api/submit-quiz', methods=['POST'])
 @login_required
 def submit_quiz():
-    data = request.get_json()
-    quiz_id = data.get('quiz_id')
-    answers = data.get('answers')
-    user_email = session.get('user_email')
-    
-    if not quiz_id or not answers:
-        return jsonify({'success': False, 'error': 'Missing quiz data'}), 400
-    
-    # Get quiz details
-    quiz = db_manager.get_quiz_by_id(quiz_id)
-    if not quiz:
-        return jsonify({'success': False, 'error': 'Quiz not found'}), 404
-    
-    # Calculate score
-    questions = quiz['questions']
-    correct_answers = 0
-    total_questions = len(questions)
-    
-    for i, question in enumerate(questions):
-        if str(i) in answers and answers[str(i)] == question['correct_answer']:
-            correct_answers += 1
-    
-    score = int((correct_answers / total_questions) * 100)
-    passed = score >= quiz['passing_score']
-    
-    # Save quiz attempt
-    db_manager.save_quiz_attempt(user_email, quiz_id, score, answers, passed)
-    
-    # Add rewards if passed
-    if passed:
-        # Points reward
-        db_manager.add_user_reward(user_email, 'points', quiz['points_reward'], f"Completed quiz: {quiz['title']}")
+    try:
+        data = request.get_json()
+        quiz_id = data.get('quiz_id')
+        answers = data.get('answers')
+        user_email = session.get('user_email')
         
-        # Check if course is completed and show achievement message
-        course_id = quiz['course_id']
-        if db_manager.is_course_completed(user_email, course_id):
-            # Award course completion points
-            db_manager.add_user_reward(user_email, 'points', 50, f"Course completion: {course_id}")
+        if not quiz_id or not answers:
+            return jsonify({'success': False, 'error': 'Missing quiz data'}), 400
+        
+        # Get quiz details
+        quiz = db_manager.get_quiz_by_id(quiz_id)
+        if not quiz:
+            return jsonify({'success': False, 'error': 'Quiz not found'}), 404
+        
+        # Parse questions from JSON if needed - FIXED VERSION
+        try:
+            questions = quiz['questions']
+            if isinstance(questions, str):
+                questions = json.loads(questions)
+        except (json.JSONDecodeError, TypeError) as e:
+            print(f"❌ Error parsing quiz questions in submit: {e}")
+            return jsonify({'success': False, 'error': 'Invalid quiz format'}), 500
+        
+        # Calculate score
+        correct_answers = 0
+        total_questions = len(questions)
+        
+        for i, question in enumerate(questions):
+            user_answer = answers.get(str(i))
+            correct_answer = question.get('correct_answer')
             
-            # Get achievement level
-            total_points = db_manager.get_user_total_points(user_email)
-            level, message = db_manager.get_achievement_level(total_points)
+            if user_answer is not None and user_answer == correct_answer:
+                correct_answers += 1
+        
+        score = int((correct_answers / total_questions) * 100) if total_questions > 0 else 0
+        passed = score >= quiz['passing_score']
+        
+        # Save quiz attempt
+        success = db_manager.save_quiz_attempt(user_email, quiz_id, score, answers, passed)
+        if not success:
+            return jsonify({'success': False, 'error': 'Failed to save quiz attempt'}), 500
+        
+        # Award points if passed
+        points_awarded = 0
+        total_points = db_manager.get_user_total_points(user_email)
+        
+        if passed:
+            points_awarded = quiz['points_reward']
+            db_manager.add_user_reward(user_email, 'points', points_awarded, f"Completed quiz: {quiz['title']}")
             
-            return jsonify({
-                'success': True,
-                'score': score,
-                'passed': passed,
-                'correct_answers': correct_answers,
-                'total_questions': total_questions,
-                'passing_score': quiz['passing_score'],
-                'course_completed': True,
-                'achievement_unlocked': True,
-                'level': level,
-                'message': f"🎉 Achievement Unlocked! You've mastered {course_id.replace('_', ' ').title()}! {message} Stay tuned for new learning courses!",
-                'total_points': total_points
-            })
-    
-    return jsonify({
-        'success': True,
-        'score': score,
-        'passed': passed,
-        'correct_answers': correct_answers,
-        'total_questions': total_questions,
-        'passing_score': quiz['passing_score']
-    })
+            # Check if course is completed and show achievement message
+            course_id = quiz['course_id']
+            if db_manager.is_course_completed(user_email, course_id):
+                # Award course completion points
+                db_manager.add_user_reward(user_email, 'points', 50, f"Course completion: {course_id}")
+                
+                # Get updated total points and achievement level
+                total_points = db_manager.get_user_total_points(user_email)
+                level, message = db_manager.get_achievement_level(total_points)
+                
+                return jsonify({
+                    'success': True,
+                    'score': score,
+                    'passed': passed,
+                    'correct_answers': correct_answers,
+                    'total_questions': total_questions,
+                    'points_reward': points_awarded + 50,  # Include course completion bonus
+                    'course_completed': True,
+                    'achievement_unlocked': True,
+                    'level': level,
+                    'message': f"🎉 Achievement Unlocked! You've mastered {course_id.replace('_', ' ').title()}! {message}",
+                    'total_points': total_points
+                })
+            else:
+                # Get updated total points
+                total_points = db_manager.get_user_total_points(user_email)
+        
+        return jsonify({
+            'success': True,
+            'score': score,
+            'passed': passed,
+            'correct_answers': correct_answers,
+            'total_questions': total_questions,
+            'points_reward': points_awarded,
+            'total_points': total_points
+        })
+        
+    except Exception as e:
+        print(f"❌ Error submitting quiz: {e}")
+        return jsonify({'success': False, 'error': 'Internal server error'}), 500
 
 @app.route('/rewards')
 @login_required
 def rewards():
-    user_email = session.get('user_email')
-    total_points = db_manager.get_user_total_points(user_email)
-    level, level_message = db_manager.get_achievement_level(total_points)
-    tableau_uploads = db_manager.get_user_tableau_uploads(user_email)
-    
-    return render_template('rewards.html', 
-                         total_points=total_points,
-                         level=level,
-                         level_message=level_message,
-                         tableau_uploads=tableau_uploads)
+    try:
+        user_email = session.get('user_email')
+        total_points = db_manager.get_user_total_points(user_email)
+        level, level_message = db_manager.get_achievement_level(total_points)
+        tableau_uploads = db_manager.get_user_tableau_uploads(user_email)
+        
+        return render_template('rewards.html', 
+                             total_points=total_points,
+                             level=level,
+                             level_message=level_message,
+                             tableau_uploads=tableau_uploads)
+    except Exception as e:
+        print(f"❌ Error loading rewards page: {e}")
+        flash('Error loading rewards page.', 'error')
+        return redirect(url_for('course'))
 
 @app.route('/upload-tableau', methods=['GET', 'POST'])
 @login_required
@@ -963,19 +1049,23 @@ def upload_tableau():
     user_email = session.get('user_email')
     
     if request.method == 'POST':
-        dashboard_title = request.form.get('dashboard_title')
-        dashboard_description = request.form.get('dashboard_description')
-        file_url = request.form.get('file_url')  # For now, just a URL field
-        
-        if not all([dashboard_title, dashboard_description, file_url]):
-            flash('All fields are required.', 'error')
-        else:
-            success = db_manager.upload_tableau_dashboard(user_email, dashboard_title, dashboard_description, file_url)
-            if success:
-                flash('🎉 Dashboard uploaded successfully! You earned 25 points!', 'success')
-                return redirect(url_for('rewards'))
+        try:
+            dashboard_title = request.form.get('dashboard_title', '').strip()
+            dashboard_description = request.form.get('dashboard_description', '').strip()
+            file_url = request.form.get('file_url', '').strip()  # For now, just a URL field
+            
+            if not all([dashboard_title, dashboard_description, file_url]):
+                flash('All fields are required.', 'error')
             else:
-                flash('You have already uploaded a dashboard for this course.', 'info')
+                success = db_manager.upload_tableau_dashboard(user_email, dashboard_title, dashboard_description, file_url)
+                if success:
+                    flash('🎉 Dashboard uploaded successfully! You earned 25 points!', 'success')
+                    return redirect(url_for('rewards'))
+                else:
+                    flash('You have already uploaded a dashboard for this course.', 'info')
+        except Exception as e:
+            print(f"❌ Error uploading tableau dashboard: {e}")
+            flash('Error uploading dashboard. Please try again.', 'error')
     
     return render_template('upload_tableau.html')
 
@@ -988,26 +1078,30 @@ def add_quiz():
         return redirect(url_for('index'))
     
     if request.method == 'POST':
-        course_id = request.form.get('course_id')
-        resource_id = request.form.get('resource_id')
-        title = request.form.get('title')
-        description = request.form.get('description')
-        questions_json = request.form.get('questions')
-        passing_score = int(request.form.get('passing_score', 70))
-        points_reward = int(request.form.get('points_reward', 10))
-        
-        if not questions_json:
-            flash('Questions are required.', 'error')
-        else:
-            try:
-                questions = json.loads(questions_json)
-                success = db_manager.add_quiz(course_id, resource_id, title, description, questions, passing_score, points_reward)
-                if success:
-                    flash('Quiz added successfully!', 'success')
-                else:
-                    flash('Failed to add quiz.', 'error')
-            except json.JSONDecodeError:
-                flash('Invalid questions format.', 'error')
+        try:
+            course_id = request.form.get('course_id')
+            resource_id = request.form.get('resource_id')
+            title = request.form.get('title')
+            description = request.form.get('description')
+            questions_json = request.form.get('questions')
+            passing_score = int(request.form.get('passing_score', 70))
+            points_reward = int(request.form.get('points_reward', 10))
+            
+            if not questions_json:
+                flash('Questions are required.', 'error')
+            else:
+                try:
+                    questions = json.loads(questions_json)
+                    success = db_manager.add_quiz(course_id, resource_id, title, description, questions, passing_score, points_reward)
+                    if success:
+                        flash('Quiz added successfully!', 'success')
+                    else:
+                        flash('Failed to add quiz.', 'error')
+                except json.JSONDecodeError:
+                    flash('Invalid questions format. Please use valid JSON.', 'error')
+        except Exception as e:
+            print(f"❌ Error adding quiz: {e}")
+            flash('Error adding quiz. Please try again.', 'error')
     
     return render_template('admin_add_quiz.html')
 
@@ -1018,8 +1112,13 @@ def init_quizzes():
         flash('You are not authorized to initialize quizzes.', 'error')
         return redirect(url_for('index'))
     
-    initialize_sample_quizzes()
-    flash('Sample quizzes initialized successfully!', 'success')
+    try:
+        initialize_sample_quizzes()
+        flash('Sample quizzes initialized successfully!', 'success')
+    except Exception as e:
+        print(f"❌ Error initializing quizzes: {e}")
+        flash('Error initializing quizzes. Please try again.', 'error')
+    
     return redirect(url_for('index'))
 
 @app.route('/debug/quizzes')
@@ -1060,6 +1159,88 @@ def debug_init_quizzes():
     except Exception as e:
         return jsonify({'error': str(e)})
 
+# Additional API routes for better functionality
+@app.route('/api/user-stats')
+@login_required
+def user_stats():
+    """API endpoint to get user statistics"""
+    try:
+        user_email = session.get('user_email')
+        
+        stats = {
+            'total_points': db_manager.get_user_total_points(user_email),
+            'analytics_progress': db_manager.get_course_progress_percentage(
+                user_email, 'data_analytics', DATA_ANALYTICS_RESOURCES
+            ),
+            'tableau_progress': db_manager.get_course_progress_percentage(
+                user_email, 'tableau', TABLEAU_RESOURCES
+            ),
+            'quiz_attempts': len(db_manager.get_user_quiz_attempts(user_email)),
+            'passed_quizzes': len([a for a in db_manager.get_user_quiz_attempts(user_email) if a['passed']])
+        }
+        
+        return jsonify({'success': True, 'stats': stats})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/leaderboard')
+@login_required
+def leaderboard():
+    """Public leaderboard page"""
+    try:
+        leaderboard_data = db_manager.get_leaderboard(20)
+        user_email = session.get('user_email')
+        user_points = db_manager.get_user_total_points(user_email)
+        
+        return render_template('leaderboard.html', 
+                             leaderboard=leaderboard_data,
+                             user_email=user_email,
+                             user_points=user_points)
+    except Exception as e:
+        print(f"❌ Error loading leaderboard: {e}")
+        flash('Error loading leaderboard.', 'error')
+        return redirect(url_for('course'))
+
+@app.route('/profile')
+@login_required
+def profile():
+    """User profile page"""
+    try:
+        user_email = session.get('user_email')
+        total_points = db_manager.get_user_total_points(user_email)
+        level, level_description = db_manager.get_achievement_level(total_points)
+        
+        # Get course completion status
+        analytics_completed = db_manager.is_course_completed(user_email, 'data_analytics')
+        tableau_completed = db_manager.is_course_completed(user_email, 'tableau')
+        
+        # Get quiz attempts
+        quiz_attempts = db_manager.get_user_quiz_attempts(user_email)
+        passed_quizzes = [attempt for attempt in quiz_attempts if attempt['passed']]
+        
+        return render_template('profile.html',
+                             user=session,
+                             total_points=total_points,
+                             level=level,
+                             level_description=level_description,
+                             analytics_completed=analytics_completed,
+                             tableau_completed=tableau_completed,
+                             quiz_attempts=quiz_attempts,
+                             passed_quizzes=passed_quizzes)
+    except Exception as e:
+        print(f"❌ Error loading profile: {e}")
+        flash('Error loading profile.', 'error')
+        return redirect(url_for('course'))
+
+# Error handlers
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return render_template('500.html'), 500
+
 if __name__ == '__main__':
     # Initialize database first
     print("🔄 Initializing database...")
@@ -1078,11 +1259,14 @@ if __name__ == '__main__':
         print(f"⚠️ Quiz initialization had issues: {e}")
         print("💡 You can manually initialize quizzes by visiting /debug/init-quizzes")
     
+    # Display startup information
+    display_startup_info()
+    
     # Start ngrok tunnel
     try:
-        ngrok.start_ngrok()
-        print("✅ Ngrok tunnel started successfully")
+        start_ngrok_tunnel()
     except Exception as e:
         print(f"❌ Failed to start ngrok tunnel: {e}")
     
+    # Start the Flask app
     app.run(debug=True, host='0.0.0.0', port=5000)
