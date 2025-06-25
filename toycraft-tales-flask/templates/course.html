@@ -155,19 +155,16 @@
     transition: background 0.18s, box-shadow 0.18s;
     box-shadow: 0 2px 8px 0 rgba(245, 158, 11, 0.10);
   }
-  .quiz-btn:hover {
+  .quiz-btn:hover:not(.disabled) {
     background: linear-gradient(90deg, #d97706 0%, #f59e0b 100%);
     color: #fff;
     box-shadow: 0 4px 16px 0 rgba(245, 158, 11, 0.16);
   }
-  .cert-section {
-    background: linear-gradient(120deg, #f0f4ff 0%, #e0e7ff 100%);
-    border-radius: 24px;
-    box-shadow: 0 4px 24px 0 rgba(99,102,241,0.07);
-    padding: 2.5rem 1.5rem 2rem 1.5rem;
-    margin: 2.5rem 0 2.5rem 0;
-    animation: fadeInUp 1.2s cubic-bezier(.4,2,.6,1);
-    display: block;
+  .quiz-btn.disabled {
+    background: #22c55e;
+    opacity: 0.8;
+    cursor: not-allowed;
+    pointer-events: none;
   }
   .progress-bar-container {
     height: 20px;
@@ -180,7 +177,18 @@
     background-color: #6366f1;
     transition: width 0.3s ease-in-out;
   }
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 </style>
+
 <div class="hero-section">
   <h1>Hi {{ (user.name if user and user.name else (user.email.split('@')[0] if user and user.email else 'there')) }}!</h1>
   <p>Welcome to your personalized learning journey. Here you'll find the best, most recognized Data Analytics and Tableau courses—carefully curated for you. Start learning, earn certificates, and level up your career with a beautiful experience!</p>
@@ -200,10 +208,10 @@
   <div style="max-width:340px;margin-bottom:1.2rem;">
     <div style="display:flex;justify-content:space-between;align-items:center;">
       <span style="font-weight:600;color:#6366f1;">Progress</span>
-      <span style="font-size:1rem;font-weight:600;color:#22223b;" data-progress="{{ analytics_progress }}">{{ analytics_progress }}%</span>
+      <span style="font-size:1rem;font-weight:600;color:#22223b;" id="analytics-progress-text">{{ analytics_progress }}%</span>
     </div>
     <div class="progress-bar-container">
-      <div class="progress-bar" style="width: {{ analytics_progress }}%;" data-progress="{{ analytics_progress }}"></div>
+      <div class="progress-bar" id="analytics-progress-bar" style="width: {{ analytics_progress }}%;"></div>
     </div>
   </div>
   <div class="resource-list">
@@ -211,30 +219,33 @@
       <div class="resource-title">GeeksforGeeks: Data Science & Analytics</div>
       <div class="resource-desc">Hundreds of free, well-structured tutorials on Data Analytics, Python, Pandas, and more. No login required.</div>
       <a class="resource-btn" href="https://www.geeksforgeeks.org/data-science-tutorial/" target="_blank" data-course-id="data_analytics" data-resource-id="gfg">Open & Learn</a>
-      <a class="quiz-btn {% if analytics_quiz_status['gfg'] %}disabled completed{% endif %}" href="{% if not analytics_quiz_status['gfg'] %}{{ url_for('take_quiz', course_id='data_analytics', resource_id='gfg') }}{% else %}#{% endif %}" {% if analytics_quiz_status['gfg'] %}tabindex="-1" aria-disabled="true" style="pointer-events:none;opacity:0.7;"{% endif %}>
-        {% if analytics_quiz_status['gfg'] %}✔ Quiz Completed{% else %}Take Quiz{% endif %}
+      <a class="quiz-btn {% if analytics_quiz_status.get('gfg') %}disabled{% endif %}" 
+         href="{% if not analytics_quiz_status.get('gfg') %}{{ url_for('take_quiz', course_id='data_analytics', resource_id='gfg') }}{% else %}#{% endif %}">
+        {% if analytics_quiz_status.get('gfg') %}✔ Quiz Completed{% else %}Take Quiz{% endif %}
       </a>
     </div>
     <div class="resource-card">
       <div class="resource-title">Kaggle Learn: Data Science Micro-courses</div>
       <div class="resource-desc">Free, interactive micro-courses on Python, Pandas, Data Visualization, and more. No login required to read lessons.</div>
       <a class="resource-btn" href="https://www.kaggle.com/learn/overview" target="_blank" data-course-id="data_analytics" data-resource-id="kaggle">Open & Learn</a>
-      <a class="quiz-btn {% if analytics_quiz_status['kaggle'] %}disabled completed{% endif %}" href="{% if not analytics_quiz_status['kaggle'] %}{{ url_for('take_quiz', course_id='data_analytics', resource_id='kaggle') }}{% else %}#{% endif %}" {% if analytics_quiz_status['kaggle'] %}tabindex="-1" aria-disabled="true" style="pointer-events:none;opacity:0.7;"{% endif %}>
-        {% if analytics_quiz_status['kaggle'] %}✔ Quiz Completed{% else %}Take Quiz{% endif %}
+      <a class="quiz-btn {% if analytics_quiz_status.get('kaggle') %}disabled{% endif %}" 
+         href="{% if not analytics_quiz_status.get('kaggle') %}{{ url_for('take_quiz', course_id='data_analytics', resource_id='kaggle') }}{% else %}#{% endif %}">
+        {% if analytics_quiz_status.get('kaggle') %}✔ Quiz Completed{% else %}Take Quiz{% endif %}
       </a>
     </div>
   </div>
 </div>
+
 <div class="course-section">
   <div class="course-title">Data Analytics with Tableau / Data Visualization</div>
   <div class="resource-category">Learning Resources</div>
   <div style="max-width:340px;margin-bottom:1.2rem;">
     <div style="display:flex;justify-content:space-between;align-items:center;">
       <span style="font-weight:600;color:#6366f1;">Progress</span>
-      <span style="font-size:1rem;font-weight:600;color:#22223b;" data-progress="{{ tableau_progress }}">{{ tableau_progress }}%</span>
+      <span style="font-size:1rem;font-weight:600;color:#22223b;" id="tableau-progress-text">{{ tableau_progress }}%</span>
     </div>
     <div class="progress-bar-container">
-      <div class="progress-bar" style="width: {{ tableau_progress }}%;" data-progress="{{ tableau_progress }}"></div>
+      <div class="progress-bar" id="tableau-progress-bar" style="width: {{ tableau_progress }}%;"></div>
     </div>
   </div>
   <div class="resource-list">
@@ -242,109 +253,92 @@
       <div class="resource-title">Tableau Official Free Training Videos</div>
       <div class="resource-desc">Official Tableau video tutorials. No certificate, but always free and up-to-date.</div>
       <a class="resource-btn" href="https://www.tableau.com/learn/training/20211" target="_blank" data-course-id="tableau" data-resource-id="tableau">Open & Learn</a>
-      <a class="quiz-btn {% if tableau_quiz_status['tableau'] %}disabled completed{% endif %}" href="{% if not tableau_quiz_status['tableau'] %}{{ url_for('take_quiz', course_id='tableau', resource_id='tableau') }}{% else %}#{% endif %}" {% if tableau_quiz_status['tableau'] %}tabindex="-1" aria-disabled="true" style="pointer-events:none;opacity:0.7;"{% endif %}>
-        {% if tableau_quiz_status['tableau'] %}✔ Quiz Completed{% else %}Take Quiz{% endif %}
+      <a class="quiz-btn {% if tableau_quiz_status.get('tableau') %}disabled{% endif %}" 
+         href="{% if not tableau_quiz_status.get('tableau') %}{{ url_for('take_quiz', course_id='tableau', resource_id='tableau') }}{% else %}#{% endif %}">
+        {% if tableau_quiz_status.get('tableau') %}✔ Quiz Completed{% else %}Take Quiz{% endif %}
       </a>
     </div>
   </div>
 </div>
+
 <script>
-document.body.classList.add('course-bg');
-
-// Store total resources for each course
-const dataAnalyticsResources = ['gfg', 'kaggle']; // Static definition from app.py
-const tableauResources = ['tableau']; // Static definition from app.py
-
-// Initialize opened resources based on current progress
-let openedAnalyticsResources = new Set();
-let openedTableauResources = new Set();
-
-// Initialize with current progress from server
 document.addEventListener('DOMContentLoaded', function() {
-    // Get current progress from data attributes
-    const analyticsProgressBar = document.querySelector('.course-section:nth-child(2) .progress-bar');
-    const tableauProgressBar = document.querySelector('.course-section:nth-child(3) .progress-bar');
-    
-    const analyticsProgress = analyticsProgressBar ? parseInt(analyticsProgressBar.getAttribute('data-progress')) : 0;
-    const tableauProgress = tableauProgressBar ? parseInt(tableauProgressBar.getAttribute('data-progress')) : 0;
-    
-    // Calculate which resources are already opened based on progress percentage
-    const analyticsOpenedCount = Math.round((analyticsProgress / 100) * dataAnalyticsResources.length);
-    const tableauOpenedCount = Math.round((tableauProgress / 100) * tableauResources.length);
-    
-    // Add the appropriate number of resources to the sets
-    for (let i = 0; i < analyticsOpenedCount; i++) {
-        openedAnalyticsResources.add(dataAnalyticsResources[i]);
-    }
-    for (let i = 0; i < tableauOpenedCount; i++) {
-        openedTableauResources.add(tableauResources[i]);
-    }
-    
-    // Update progress bars with initial values
-    updateProgressBars();
-});
+  document.body.classList.add('course-bg');
 
-// Function to update progress bars
-function updateProgressBars() {
-    // Update Data Analytics progress
-    const analyticsPercentage = Math.round((openedAnalyticsResources.size / dataAnalyticsResources.length) * 100);
-    const analyticsProgressBar = document.querySelector('.course-section:nth-child(2) .progress-bar');
-    const analyticsProgressText = document.querySelector('.course-section:nth-child(2) span[style*="font-weight:600;color:#22223b"]');
-    if (analyticsProgressBar) analyticsProgressBar.style.width = analyticsPercentage + '%';
-    if (analyticsProgressText) analyticsProgressText.textContent = analyticsPercentage + '%';
-    
-    // Update Tableau progress
-    const tableauPercentage = Math.round((openedTableauResources.size / tableauResources.length) * 100);
-    const tableauProgressBar = document.querySelector('.course-section:nth-child(3) .progress-bar');
-    const tableauProgressText = document.querySelector('.course-section:nth-child(3) span[style*="font-weight:600;color:#22223b"]');
-    if (tableauProgressBar) tableauProgressBar.style.width = tableauPercentage + '%';
-    if (tableauProgressText) tableauProgressText.textContent = tableauPercentage + '%';
-}
+  // Course resource definitions (should match backend)
+  const courseResources = {
+    'data_analytics': ['gfg', 'kaggle'],
+    'tableau': ['tableau']
+  };
 
-document.querySelectorAll('.resource-btn').forEach(function(btn) {
-  btn.addEventListener('click', function() {
-    const courseId = btn.getAttribute('data-course-id');
-    const resourceId = btn.getAttribute('data-resource-id');
-    if (courseId && resourceId) {
-      // Update local tracking immediately for instant feedback
-      if (courseId === 'data_analytics') {
-        openedAnalyticsResources.add(resourceId);
-      } else if (courseId === 'tableau') {
-        openedTableauResources.add(resourceId);
-      }
+  // Track opened resources (initialize with server data)
+  let openedResources = {
+    'data_analytics': new Set(),
+    'tableau': new Set()
+  };
+
+  // Initialize progress based on server data
+  const initialAnalyticsProgress = {{ analytics_progress }};
+  const initialTableauProgress = {{ tableau_progress }};
+  
+  // Calculate initially opened resources based on progress
+  const analyticsCount = Math.round((initialAnalyticsProgress / 100) * courseResources.data_analytics.length);
+  const tableauCount = Math.round((initialTableauProgress / 100) * courseResources.tableau.length);
+  
+  for (let i = 0; i < analyticsCount; i++) {
+    openedResources.data_analytics.add(courseResources.data_analytics[i]);
+  }
+  for (let i = 0; i < tableauCount; i++) {
+    openedResources.tableau.add(courseResources.tableau[i]);
+  }
+
+  function updateProgress(courseId) {
+    const opened = openedResources[courseId].size;
+    const total = courseResources[courseId].length;
+    const percentage = Math.round((opened / total) * 100);
+    
+    if (courseId === 'data_analytics') {
+      document.getElementById('analytics-progress-bar').style.width = percentage + '%';
+      document.getElementById('analytics-progress-text').textContent = percentage + '%';
+    } else if (courseId === 'tableau') {
+      document.getElementById('tableau-progress-bar').style.width = percentage + '%';
+      document.getElementById('tableau-progress-text').textContent = percentage + '%';
+    }
+  }
+
+  // Handle resource button clicks
+  document.querySelectorAll('.resource-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const courseId = btn.getAttribute('data-course-id');
+      const resourceId = btn.getAttribute('data-resource-id');
       
-      // Update progress bars immediately
-      updateProgressBars();
-      
-      // Send to server
-      fetch('/api/mark-resource-opened', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({course_id: courseId, resource_id: resourceId})
-      }).then(response => response.json())
-      .then(data => {
-        if (!data.success) {
-          console.error('Failed to mark resource as opened');
-          // Revert the local change if server failed
-          if (courseId === 'data_analytics') {
-            openedAnalyticsResources.delete(resourceId);
-          } else if (courseId === 'tableau') {
-            openedTableauResources.delete(resourceId);
+      if (courseId && resourceId) {
+        // Update local state immediately
+        openedResources[courseId].add(resourceId);
+        updateProgress(courseId);
+        
+        // Send to server
+        fetch('/api/mark-resource-opened', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({course_id: courseId, resource_id: resourceId})
+        }).then(response => response.json())
+        .then(data => {
+          if (!data.success) {
+            console.error('Failed to mark resource as opened');
+            // Revert local change
+            openedResources[courseId].delete(resourceId);
+            updateProgress(courseId);
           }
-          updateProgressBars();
-        }
-      }).catch(error => {
-        console.error('Error marking resource as opened:', error);
-        // Revert the local change if server failed
-        if (courseId === 'data_analytics') {
-          openedAnalyticsResources.delete(resourceId);
-        } else if (courseId === 'tableau') {
-          openedTableauResources.delete(resourceId);
-        }
-        updateProgressBars();
-      });
-    }
+        }).catch(error => {
+          console.error('Error marking resource as opened:', error);
+          // Revert local change
+          openedResources[courseId].delete(resourceId);
+          updateProgress(courseId);
+        });
+      }
+    });
   });
 });
 </script>
-{% endblock %} 
+{% endblock %}
