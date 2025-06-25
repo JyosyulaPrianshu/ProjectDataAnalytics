@@ -37,6 +37,26 @@
     font-weight: 400;
     text-shadow: 0 1px 8px rgba(80,80,180,0.10);
   }
+  .rewards-banner {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin: 1rem auto;
+    max-width: 900px;
+    text-align: center;
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(251, 191, 36, 0.3);
+  }
+  .rewards-banner h3 {
+    font-weight: 700;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .rewards-banner p {
+    font-size: 1.1rem;
+    margin-bottom: 0;
+    opacity: 0.9;
+  }
   .course-section {
     margin: 0 auto 2.5rem auto;
     max-width: 1100px;
@@ -112,6 +132,7 @@
     font-size: 1.05rem;
     text-decoration: none;
     margin-top: 0.2rem;
+    margin-right: 0.5rem;
     transition: background 0.18s, box-shadow 0.18s;
     box-shadow: 0 2px 8px 0 rgba(99,102,241,0.10);
   }
@@ -119,6 +140,25 @@
     background: linear-gradient(90deg, #4338ca 0%, #3b82f6 100%);
     color: #fff;
     box-shadow: 0 4px 16px 0 rgba(99,102,241,0.16);
+  }
+  .quiz-btn {
+    display: inline-block;
+    background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+    color: #fff;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    padding: 0.7rem 1.4rem;
+    font-size: 1.05rem;
+    text-decoration: none;
+    margin-top: 0.2rem;
+    transition: background 0.18s, box-shadow 0.18s;
+    box-shadow: 0 2px 8px 0 rgba(245, 158, 11, 0.10);
+  }
+  .quiz-btn:hover {
+    background: linear-gradient(90deg, #d97706 0%, #f59e0b 100%);
+    color: #fff;
+    box-shadow: 0 4px 16px 0 rgba(245, 158, 11, 0.16);
   }
   .cert-section {
     background: linear-gradient(120deg, #f0f4ff 0%, #e0e7ff 100%);
@@ -145,6 +185,15 @@
   <h1>Hi {{ (user.name if user and user.name else (user.email.split('@')[0] if user and user.email else 'there')) }}!</h1>
   <p>Welcome to your personalized learning journey. Here you'll find the best, most recognized Data Analytics and Tableau courses—carefully curated for you. Start learning, earn certificates, and level up your career with a beautiful experience!</p>
 </div>
+
+{% if total_points > 0 %}
+<div class="rewards-banner">
+  <h3>🎉 Your Learning Rewards</h3>
+  <p>You've earned <strong>{{ total_points }} points</strong> so far! Keep learning to unlock more rewards and certificates.</p>
+  <a href="{{ url_for('rewards') }}" class="resource-btn" style="margin-top: 1rem;">View My Rewards</a>
+</div>
+{% endif %}
+
 <div class="course-section">
   <div class="course-title">Data Analytics</div>
   <div class="resource-category">Learning Resources</div>
@@ -162,11 +211,13 @@
       <div class="resource-title">GeeksforGeeks: Data Science & Analytics</div>
       <div class="resource-desc">Hundreds of free, well-structured tutorials on Data Analytics, Python, Pandas, and more. No login required.</div>
       <a class="resource-btn" href="https://www.geeksforgeeks.org/data-science-tutorial/" target="_blank" data-course-id="data_analytics" data-resource-id="gfg">Open & Learn</a>
+      <a class="quiz-btn" href="{{ url_for('take_quiz', course_id='data_analytics', resource_id='gfg') }}">Take Quiz</a>
     </div>
     <div class="resource-card">
       <div class="resource-title">Kaggle Learn: Data Science Micro-courses</div>
       <div class="resource-desc">Free, interactive micro-courses on Python, Pandas, Data Visualization, and more. No login required to read lessons.</div>
       <a class="resource-btn" href="https://www.kaggle.com/learn/overview" target="_blank" data-course-id="data_analytics" data-resource-id="kaggle">Open & Learn</a>
+      <a class="quiz-btn" href="{{ url_for('take_quiz', course_id='data_analytics', resource_id='kaggle') }}">Take Quiz</a>
     </div>
   </div>
 </div>
@@ -187,20 +238,79 @@
       <div class="resource-title">Tableau Official Free Training Videos</div>
       <div class="resource-desc">Official Tableau video tutorials. No certificate, but always free and up-to-date.</div>
       <a class="resource-btn" href="https://www.tableau.com/learn/training/20211" target="_blank" data-course-id="tableau" data-resource-id="tableau">Open & Learn</a>
+      <a class="quiz-btn" href="{{ url_for('take_quiz', course_id='tableau', resource_id='tableau') }}">Take Quiz</a>
     </div>
   </div>
 </div>
 <script>
 document.body.classList.add('course-bg');
+
+// Store total resources for each course
+const dataAnalyticsResources = ['gfg', 'kaggle']; // Static definition from app.py
+const tableauResources = ['tableau']; // Static definition from app.py
+
+// Initialize opened resources based on current progress
+let openedAnalyticsResources = new Set();
+let openedTableauResources = new Set();
+
+// Function to update progress bars
+function updateProgressBars() {
+    // Update Data Analytics progress
+    const analyticsPercentage = Math.round((openedAnalyticsResources.size / dataAnalyticsResources.length) * 100);
+    const analyticsProgressBar = document.querySelector('.course-section:nth-child(2) .progress-bar');
+    const analyticsProgressText = document.querySelector('.course-section:nth-child(2) span[style*="font-weight:600;color:#22223b"]');
+    if (analyticsProgressBar) analyticsProgressBar.style.width = analyticsPercentage + '%';
+    if (analyticsProgressText) analyticsProgressText.textContent = analyticsPercentage + '%';
+    
+    // Update Tableau progress
+    const tableauPercentage = Math.round((openedTableauResources.size / tableauResources.length) * 100);
+    const tableauProgressBar = document.querySelector('.course-section:nth-child(3) .progress-bar');
+    const tableauProgressText = document.querySelector('.course-section:nth-child(3) span[style*="font-weight:600;color:#22223b"]');
+    if (tableauProgressBar) tableauProgressBar.style.width = tableauPercentage + '%';
+    if (tableauProgressText) tableauProgressText.textContent = tableauPercentage + '%';
+}
+
 document.querySelectorAll('.resource-btn').forEach(function(btn) {
   btn.addEventListener('click', function() {
     const courseId = btn.getAttribute('data-course-id');
     const resourceId = btn.getAttribute('data-resource-id');
     if (courseId && resourceId) {
+      // Update local tracking immediately for instant feedback
+      if (courseId === 'data_analytics') {
+        openedAnalyticsResources.add(resourceId);
+      } else if (courseId === 'tableau') {
+        openedTableauResources.add(resourceId);
+      }
+      
+      // Update progress bars immediately
+      updateProgressBars();
+      
+      // Send to server
       fetch('/api/mark-resource-opened', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({course_id: courseId, resource_id: resourceId})
+      }).then(response => response.json())
+      .then(data => {
+        if (!data.success) {
+          console.error('Failed to mark resource as opened');
+          // Revert the local change if server failed
+          if (courseId === 'data_analytics') {
+            openedAnalyticsResources.delete(resourceId);
+          } else if (courseId === 'tableau') {
+            openedTableauResources.delete(resourceId);
+          }
+          updateProgressBars();
+        }
+      }).catch(error => {
+        console.error('Error marking resource as opened:', error);
+        // Revert the local change if server failed
+        if (courseId === 'data_analytics') {
+          openedAnalyticsResources.delete(resourceId);
+        } else if (courseId === 'tableau') {
+          openedTableauResources.delete(resourceId);
+        }
+        updateProgressBars();
       });
     }
   });
