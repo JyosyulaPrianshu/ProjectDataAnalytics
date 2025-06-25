@@ -45,33 +45,39 @@ class DatabaseManager:
             return None
     
     def init_database(self):
+        """Initialize database tables"""
         connection = None
         cursor = None
         try:
             connection = self.get_connection()
             if not connection:
-                return
+                return False
             cursor = connection.cursor()
-            # Create tables if they don't exist
+            
+            # Create contacts table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS contacts (
                 id SERIAL PRIMARY KEY,
-                name VARCHAR(100) NOT NULL,
-                email VARCHAR(100) NOT NULL,
-                phone VARCHAR(20) NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                name VARCHAR(255) NOT NULL,
+                email VARCHAR(255) UNIQUE NOT NULL,
+                phone VARCHAR(20),
                 ip_address VARCHAR(45),
-                user_agent TEXT
+                user_agent TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             ''')
+            
+            # Create login table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS login (
                 id SERIAL PRIMARY KEY,
-                email VARCHAR(255) NOT NULL UNIQUE,
+                email VARCHAR(255) UNIQUE NOT NULL,
                 password_hash VARCHAR(255) NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             ''')
+            
+            # Create enrollments table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS enrollments (
                 id SERIAL PRIMARY KEY,
@@ -79,20 +85,80 @@ class DatabaseManager:
                 enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             ''')
+            
+            # Create course_progress table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS course_progress (
                 id SERIAL PRIMARY KEY,
                 user_email VARCHAR(255) NOT NULL,
                 course_id VARCHAR(100) NOT NULL,
                 resource_id VARCHAR(100) NOT NULL,
-                opened_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE (user_email, course_id, resource_id)
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_email, course_id, resource_id)
             )
             ''')
+            
+            # Create quizzes table
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS quizzes (
+                id SERIAL PRIMARY KEY,
+                course_id VARCHAR(100) NOT NULL,
+                resource_id VARCHAR(100) NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                description TEXT,
+                questions JSONB NOT NULL,
+                passing_score INTEGER DEFAULT 70,
+                points_reward INTEGER DEFAULT 10,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            ''')
+            
+            # Create quiz_attempts table
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS quiz_attempts (
+                id SERIAL PRIMARY KEY,
+                user_email VARCHAR(255) NOT NULL,
+                quiz_id INTEGER NOT NULL,
+                score INTEGER NOT NULL,
+                answers JSONB NOT NULL,
+                passed BOOLEAN NOT NULL,
+                completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (quiz_id) REFERENCES quizzes(id)
+            )
+            ''')
+            
+            # Create user_rewards table
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS user_rewards (
+                id SERIAL PRIMARY KEY,
+                user_email VARCHAR(255) NOT NULL,
+                reward_type VARCHAR(50) NOT NULL,
+                reward_value INTEGER NOT NULL,
+                description TEXT,
+                earned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            ''')
+            
+            # Create tableau_uploads table
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS tableau_uploads (
+                id SERIAL PRIMARY KEY,
+                user_email VARCHAR(255) NOT NULL,
+                course_id VARCHAR(100) NOT NULL,
+                dashboard_title VARCHAR(255) NOT NULL,
+                dashboard_description TEXT,
+                file_url TEXT NOT NULL,
+                uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            ''')
+            
             connection.commit()
-            print("✅ Database and tables created successfully!")
+            print("✅ Database tables initialized successfully")
+            return True
+            
         except Exception as e:
             print(f"❌ Error initializing database: {e}")
+            return False
         finally:
             if cursor:
                 cursor.close()
@@ -322,6 +388,286 @@ class DatabaseManager:
         total = len(all_resource_ids)
         completed = len([rid for rid in all_resource_ids if rid in opened])
         return int((completed / total) * 100) if total > 0 else 0
+
+    def add_quiz(self, course_id, resource_id, title, description, questions, passing_score=70, points_reward=10):
+        """Add a new quiz for a course resource"""
+        connection = None
+        cursor = None
+        try:
+            connection = self.get_connection()
+            if not connection:
+                return False
+            cursor = connection.cursor()
+            insert_query = '''
+            INSERT INTO quizzes (course_id, resource_id, title, description, questions, passing_score, points_reward)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            '''
+            cursor.execute(insert_query, (course_id, resource_id, title, description, questions, passing_score, points_reward))
+            connection.commit()
+            return True
+        except Exception as e:
+            print(f"❌ Error adding quiz: {e}")
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+            if connection:
+                connection.close()
+
+    def get_quiz_by_resource(self, course_id, resource_id):
+        """Get quiz for a specific resource"""
+        connection = None
+        cursor = None
+        try:
+            connection = self.get_connection()
+            if not connection:
+                return None
+            cursor = connection.cursor(cursor_factory=extras.DictCursor)
+            cursor.execute("SELECT * FROM quizzes WHERE course_id = %s AND resource_id = %s", (course_id, resource_id))
+            quiz = cursor.fetchone()
+            return dict(quiz) if quiz else None
+        except Exception as e:
+            print(f"❌ Error fetching quiz: {e}")
+            return None
+        finally:
+            if cursor:
+                cursor.close()
+            if connection:
+                connection.close()
+
+    def save_quiz_attempt(self, user_email, quiz_id, score, answers, passed):
+        """Save a quiz attempt"""
+        connection = None
+        cursor = None
+        try:
+            connection = self.get_connection()
+            if not connection:
+                return False
+            cursor = connection.cursor()
+            insert_query = '''
+            INSERT INTO quiz_attempts (user_email, quiz_id, score, answers, passed)
+            VALUES (%s, %s, %s, %s, %s)
+            '''
+            cursor.execute(insert_query, (user_email, quiz_id, score, answers, passed))
+            connection.commit()
+            return True
+        except Exception as e:
+            print(f"❌ Error saving quiz attempt: {e}")
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+            if connection:
+                connection.close()
+
+    def add_user_reward(self, user_email, reward_type, reward_value, description):
+        """Add a reward for a user"""
+        connection = None
+        cursor = None
+        try:
+            connection = self.get_connection()
+            if not connection:
+                return False
+            cursor = connection.cursor()
+            insert_query = '''
+            INSERT INTO user_rewards (user_email, reward_type, reward_value, description)
+            VALUES (%s, %s, %s, %s)
+            '''
+            cursor.execute(insert_query, (user_email, reward_type, reward_value, description))
+            connection.commit()
+            return True
+        except Exception as e:
+            print(f"❌ Error adding user reward: {e}")
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+            if connection:
+                connection.close()
+
+    def get_user_total_points(self, user_email):
+        """Get total points earned by a user"""
+        connection = None
+        cursor = None
+        try:
+            connection = self.get_connection()
+            if not connection:
+                return 0
+            cursor = connection.cursor()
+            cursor.execute("SELECT SUM(reward_value) FROM user_rewards WHERE user_email = %s AND reward_type = 'points'", (user_email,))
+            result = cursor.fetchone()
+            return result[0] if result[0] else 0
+        except Exception as e:
+            print(f"❌ Error getting user points: {e}")
+            return 0
+        finally:
+            if cursor:
+                cursor.close()
+            if connection:
+                connection.close()
+
+    def get_leaderboard(self, limit=10):
+        """Get leaderboard of top users by points"""
+        connection = None
+        cursor = None
+        try:
+            connection = self.get_connection()
+            if not connection:
+                return []
+            cursor = connection.cursor(cursor_factory=extras.DictCursor)
+            cursor.execute('''
+            SELECT user_email, SUM(reward_value) as total_points, COUNT(*) as rewards_count
+            FROM user_rewards 
+            WHERE reward_type = 'points'
+            GROUP BY user_email 
+            ORDER BY total_points DESC 
+            LIMIT %s
+            ''', (limit,))
+            results = cursor.fetchall()
+            return [dict(row) for row in results]
+        except Exception as e:
+            print(f"❌ Error fetching leaderboard: {e}")
+            return []
+        finally:
+            if cursor:
+                cursor.close()
+            if connection:
+                connection.close()
+
+    def get_achievement_level(self, total_points):
+        """Get achievement level based on total points"""
+        if total_points >= 100:
+            return "Master", "🎓 Master Level - You've mastered the fundamentals!"
+        elif total_points >= 75:
+            return "Advanced", "🚀 Advanced Level - You're doing amazing!"
+        elif total_points >= 50:
+            return "Intermediate", "⭐ Intermediate Level - Great progress!"
+        elif total_points >= 25:
+            return "Beginner", "🌱 Beginner Level - Keep learning!"
+        else:
+            return "Newcomer", "👋 Newcomer - Welcome to your learning journey!"
+
+    def upload_tableau_dashboard(self, user_email, dashboard_title, dashboard_description, file_url):
+        """Upload a Tableau dashboard for review and points"""
+        connection = None
+        cursor = None
+        try:
+            connection = self.get_connection()
+            if not connection:
+                return False
+            cursor = connection.cursor()
+            
+            # Check if user has already uploaded for this course
+            cursor.execute("SELECT id FROM tableau_uploads WHERE user_email = %s AND course_id = 'tableau'", (user_email,))
+            if cursor.fetchone():
+                return False  # Already uploaded
+            
+            insert_query = '''
+            INSERT INTO tableau_uploads (user_email, course_id, dashboard_title, dashboard_description, file_url)
+            VALUES (%s, %s, %s, %s, %s)
+            '''
+            cursor.execute(insert_query, (user_email, 'tableau', dashboard_title, dashboard_description, file_url))
+            connection.commit()
+            
+            # Award points for dashboard upload
+            self.add_user_reward(user_email, 'points', 25, f"Tableau dashboard upload: {dashboard_title}")
+            
+            return True
+        except Exception as e:
+            print(f"❌ Error uploading tableau dashboard: {e}")
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+            if connection:
+                connection.close()
+
+    def get_user_tableau_uploads(self, user_email):
+        """Get user's tableau dashboard uploads"""
+        connection = None
+        cursor = None
+        try:
+            connection = self.get_connection()
+            if not connection:
+                return []
+            cursor = connection.cursor(cursor_factory=extras.DictCursor)
+            cursor.execute("SELECT * FROM tableau_uploads WHERE user_email = %s ORDER BY uploaded_at DESC", (user_email,))
+            results = cursor.fetchall()
+            return [dict(row) for row in results]
+        except Exception as e:
+            print(f"❌ Error fetching tableau uploads: {e}")
+            return []
+        finally:
+            if cursor:
+                cursor.close()
+            if connection:
+                connection.close()
+
+    def get_quiz_by_id(self, quiz_id):
+        """Get quiz by ID"""
+        connection = None
+        cursor = None
+        try:
+            connection = self.get_connection()
+            if not connection:
+                return None
+            cursor = connection.cursor(cursor_factory=extras.DictCursor)
+            cursor.execute("SELECT * FROM quizzes WHERE id = %s", (quiz_id,))
+            quiz = cursor.fetchone()
+            return dict(quiz) if quiz else None
+        except Exception as e:
+            print(f"❌ Error fetching quiz by ID: {e}")
+            return None
+        finally:
+            if cursor:
+                cursor.close()
+            if connection:
+                connection.close()
+
+    def is_course_completed(self, user_email, course_id):
+        """Check if user has completed all resources and quizzes for a course"""
+        connection = None
+        cursor = None
+        try:
+            connection = self.get_connection()
+            if not connection:
+                return False
+            cursor = connection.cursor()
+            
+            # Get all resources for the course
+            if course_id == 'data_analytics':
+                total_resources = ['gfg', 'kaggle']
+            elif course_id == 'tableau':
+                total_resources = ['tableau']
+            else:
+                return False
+            
+            # Check if all resources are opened
+            for resource_id in total_resources:
+                cursor.execute("SELECT id FROM course_progress WHERE user_email = %s AND course_id = %s AND resource_id = %s", 
+                             (user_email, course_id, resource_id))
+                if not cursor.fetchone():
+                    return False
+            
+            # Check if all quizzes are passed
+            cursor.execute("""
+                SELECT q.id FROM quizzes q 
+                LEFT JOIN quiz_attempts qa ON q.id = qa.quiz_id AND qa.user_email = %s AND qa.passed = true
+                WHERE q.course_id = %s AND qa.id IS NULL
+            """, (user_email, course_id))
+            
+            if cursor.fetchone():
+                return False  # At least one quiz not passed
+            
+            return True
+        except Exception as e:
+            print(f"❌ Error checking course completion: {e}")
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+            if connection:
+                connection.close()
 
 # Initialize database manager
 db_manager = DatabaseManager()
