@@ -129,10 +129,18 @@
     animation: fadeInUp 1.2s cubic-bezier(.4,2,.6,1);
     display: block;
   }
+  .progress-bar-container {
+    height: 20px;
+    background-color: #e0e7ff;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%;
+    background-color: #6366f1;
+    transition: width 0.3s ease-in-out;
+  }
 </style>
-<script>
-  document.body.classList.add('course-bg');
-</script>
 <div class="hero-section">
   <h1>Hi {{ (user.name if user and user.name else (user.email.split('@')[0] if user and user.email else 'there')) }}!</h1>
   <p>Welcome to your personalized learning journey. Here you'll find the best, most recognized Data Analytics and Tableau courses—carefully curated for you. Start learning, earn certificates, and level up your career with a beautiful experience!</p>
@@ -153,12 +161,12 @@
     <div class="resource-card">
       <div class="resource-title">GeeksforGeeks: Data Science & Analytics</div>
       <div class="resource-desc">Hundreds of free, well-structured tutorials on Data Analytics, Python, Pandas, and more. No login required.</div>
-      <a class="resource-btn" href="https://www.geeksforgeeks.org/data-science-tutorial/" target="_blank">Open & Learn</a>
+      <a class="resource-btn" href="https://www.geeksforgeeks.org/data-science-tutorial/" target="_blank" data-course-id="data_analytics" data-resource-id="gfg">Open & Learn</a>
     </div>
     <div class="resource-card">
       <div class="resource-title">Kaggle Learn: Data Science Micro-courses</div>
       <div class="resource-desc">Free, interactive micro-courses on Python, Pandas, Data Visualization, and more. No login required to read lessons.</div>
-      <a class="resource-btn" href="https://www.kaggle.com/learn/overview" target="_blank">Open & Learn</a>
+      <a class="resource-btn" href="https://www.kaggle.com/learn/overview" target="_blank" data-course-id="data_analytics" data-resource-id="kaggle">Open & Learn</a>
     </div>
   </div>
 </div>
@@ -178,8 +186,24 @@
     <div class="resource-card">
       <div class="resource-title">Tableau Official Free Training Videos</div>
       <div class="resource-desc">Official Tableau video tutorials. No certificate, but always free and up-to-date.</div>
-      <a class="resource-btn" href="https://www.tableau.com/learn/training/20211" target="_blank">Open & Learn</a>
+      <a class="resource-btn" href="https://www.tableau.com/learn/training/20211" target="_blank" data-course-id="tableau" data-resource-id="tableau">Open & Learn</a>
     </div>
   </div>
 </div>
+<script>
+document.body.classList.add('course-bg');
+document.querySelectorAll('.resource-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    const courseId = btn.getAttribute('data-course-id');
+    const resourceId = btn.getAttribute('data-resource-id');
+    if (courseId && resourceId) {
+      fetch('/api/mark-resource-opened', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({course_id: courseId, resource_id: resourceId})
+      });
+    }
+  });
+});
+</script>
 {% endblock %} 
