@@ -45,7 +45,7 @@
     margin-bottom: 2rem;
     border: 1px solid #e5e7eb;
   }
-  .question-container {
+  .quiz-question {
     margin-bottom: 2.5rem;
     padding: 1.5rem;
     background: #ffffff;
@@ -196,18 +196,17 @@
     <input type="hidden" id="quizId" value="{{ quiz.id }}">
     
     {% for question in quiz.questions %}
-    <div class="question-container">
-      <div class="question-number">Question {{ loop.index }}</div>
-      <div class="question-text">{{ question.question }}</div>
-      <div class="options-container">
-        {% for option in question.options %}
-        <label class="option">
-          <input type="radio" name="q{{ loop.index0 }}" value="{{ loop.index0 }}" required>
-          {{ option }}
-        </label>
-        {% endfor %}
+      <div class="quiz-question">
+        <div class="question-text">Q{{ loop.index }}. {{ question.question }}</div>
+        <div class="options">
+          {% for option in question.options %}
+            <label class="option">
+              <input type="radio" name="q{{ loop.index0 }}" value="{{ loop.index0 }}" required>
+              {{ option }}
+            </label>
+          {% endfor %}
+        </div>
       </div>
-    </div>
     {% endfor %}
 
     <button type="submit" class="submit-btn" id="submitBtn">Submit Quiz</button>
@@ -226,14 +225,10 @@ document.body.classList.add('quiz-bg');
 document.querySelectorAll('.option').forEach(option => {
   option.addEventListener('click', function() {
     const radio = this.querySelector('input[type="radio"]');
-    const questionContainer = this.closest('.question-container');
-    
-    // Remove selected class from all options in this question
+    const questionContainer = this.closest('.quiz-question');
     questionContainer.querySelectorAll('.option').forEach(opt => {
       opt.classList.remove('selected');
     });
-    
-    // Add selected class to clicked option
     this.classList.add('selected');
     radio.checked = true;
   });
@@ -242,27 +237,20 @@ document.querySelectorAll('.option').forEach(option => {
 // Handle form submission
 document.getElementById('quizForm').addEventListener('submit', function(e) {
   e.preventDefault();
-  
   const submitBtn = document.getElementById('submitBtn');
   submitBtn.disabled = true;
   submitBtn.textContent = 'Submitting...';
-  
-  // Collect answers
   const answers = {};
-  const questions = document.querySelectorAll('.question-container');
+  const questions = document.querySelectorAll('.quiz-question');
   questions.forEach((question, index) => {
     const selectedOption = question.querySelector('input[type="radio"]:checked');
     if (selectedOption) {
       answers[index] = parseInt(selectedOption.value);
     }
   });
-  
-  // Submit quiz
   fetch('/api/submit-quiz', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       quiz_id: document.getElementById('quizId').value,
       answers: answers
