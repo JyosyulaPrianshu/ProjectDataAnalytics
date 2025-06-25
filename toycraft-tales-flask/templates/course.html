@@ -200,10 +200,10 @@
   <div style="max-width:340px;margin-bottom:1.2rem;">
     <div style="display:flex;justify-content:space-between;align-items:center;">
       <span style="font-weight:600;color:#6366f1;">Progress</span>
-      <span style="font-size:1rem;font-weight:600;color:#22223b;">{{ analytics_progress }}%</span>
+      <span style="font-size:1rem;font-weight:600;color:#22223b;" data-progress="{{ analytics_progress }}">{{ analytics_progress }}%</span>
     </div>
     <div class="progress-bar-container">
-      <div class="progress-bar" style="width: {{ analytics_progress }}%;"></div>
+      <div class="progress-bar" style="width: {{ analytics_progress }}%;" data-progress="{{ analytics_progress }}"></div>
     </div>
   </div>
   <div class="resource-list">
@@ -227,10 +227,10 @@
   <div style="max-width:340px;margin-bottom:1.2rem;">
     <div style="display:flex;justify-content:space-between;align-items:center;">
       <span style="font-weight:600;color:#6366f1;">Progress</span>
-      <span style="font-size:1rem;font-weight:600;color:#22223b;">{{ tableau_progress }}%</span>
+      <span style="font-size:1rem;font-weight:600;color:#22223b;" data-progress="{{ tableau_progress }}">{{ tableau_progress }}%</span>
     </div>
     <div class="progress-bar-container">
-      <div class="progress-bar" style="width: {{ tableau_progress }}%;"></div>
+      <div class="progress-bar" style="width: {{ tableau_progress }}%;" data-progress="{{ tableau_progress }}"></div>
     </div>
   </div>
   <div class="resource-list">
@@ -252,6 +252,31 @@ const tableauResources = ['tableau']; // Static definition from app.py
 // Initialize opened resources based on current progress
 let openedAnalyticsResources = new Set();
 let openedTableauResources = new Set();
+
+// Initialize with current progress from server
+document.addEventListener('DOMContentLoaded', function() {
+    // Get current progress from data attributes
+    const analyticsProgressBar = document.querySelector('.course-section:nth-child(2) .progress-bar');
+    const tableauProgressBar = document.querySelector('.course-section:nth-child(3) .progress-bar');
+    
+    const analyticsProgress = analyticsProgressBar ? parseInt(analyticsProgressBar.getAttribute('data-progress')) : 0;
+    const tableauProgress = tableauProgressBar ? parseInt(tableauProgressBar.getAttribute('data-progress')) : 0;
+    
+    // Calculate which resources are already opened based on progress percentage
+    const analyticsOpenedCount = Math.round((analyticsProgress / 100) * dataAnalyticsResources.length);
+    const tableauOpenedCount = Math.round((tableauProgress / 100) * tableauResources.length);
+    
+    // Add the appropriate number of resources to the sets
+    for (let i = 0; i < analyticsOpenedCount; i++) {
+        openedAnalyticsResources.add(dataAnalyticsResources[i]);
+    }
+    for (let i = 0; i < tableauOpenedCount; i++) {
+        openedTableauResources.add(tableauResources[i]);
+    }
+    
+    // Update progress bars with initial values
+    updateProgressBars();
+});
 
 // Function to update progress bars
 function updateProgressBars() {
