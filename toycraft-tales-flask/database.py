@@ -672,5 +672,30 @@ class DatabaseManager:
             if connection:
                 connection.close()
 
+    def has_passed_quiz(self, user_email, course_id, resource_id):
+        """Return True if the user has passed the quiz for the given course/resource."""
+        connection = None
+        cursor = None
+        try:
+            connection = self.get_connection()
+            if not connection:
+                return False
+            cursor = connection.cursor()
+            cursor.execute('''
+                SELECT qa.id FROM quizzes q
+                JOIN quiz_attempts qa ON q.id = qa.quiz_id
+                WHERE q.course_id = %s AND q.resource_id = %s AND qa.user_email = %s AND qa.passed = true
+                LIMIT 1
+            ''', (course_id, resource_id, user_email))
+            return cursor.fetchone() is not None
+        except Exception as e:
+            print(f"❌ Error checking quiz pass status: {e}")
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+            if connection:
+                connection.close()
+
 # Initialize database manager
 db_manager = DatabaseManager()
