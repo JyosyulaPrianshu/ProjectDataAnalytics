@@ -1015,14 +1015,61 @@ def init_quizzes():
     flash('Sample quizzes initialized successfully!', 'success')
     return redirect(url_for('index'))
 
+@app.route('/debug/quizzes')
+def debug_quizzes():
+    """Debug route to check quiz status"""
+    try:
+        # Check if quizzes exist
+        gfg_quiz = db_manager.get_quiz_by_resource('data_analytics', 'gfg')
+        kaggle_quiz = db_manager.get_quiz_by_resource('data_analytics', 'kaggle')
+        tableau_quiz = db_manager.get_quiz_by_resource('tableau', 'tableau')
+        
+        status = {
+            'database_connection': 'Unknown',
+            'geeksforgeeks_quiz': gfg_quiz is not None,
+            'kaggle_quiz': kaggle_quiz is not None,
+            'tableau_quiz': tableau_quiz is not None,
+            'total_quizzes': sum([gfg_quiz is not None, kaggle_quiz is not None, tableau_quiz is not None])
+        }
+        
+        # Test database connection
+        connection = db_manager.get_connection()
+        if connection:
+            status['database_connection'] = 'Connected'
+            connection.close()
+        else:
+            status['database_connection'] = 'Failed'
+        
+        return jsonify(status)
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+@app.route('/debug/init-quizzes')
+def debug_init_quizzes():
+    """Debug route to force quiz initialization"""
+    try:
+        initialize_sample_quizzes()
+        return jsonify({'message': 'Quiz initialization completed'})
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
 if __name__ == '__main__':
     # Initialize database first
-    db_manager.init_database()
+    print("🔄 Initializing database...")
+    db_success = db_manager.init_database()
+    if db_success:
+        print("✅ Database initialized successfully")
+    else:
+        print("⚠️ Database initialization had issues, but continuing...")
     
     # Initialize sample quizzes on startup
     print("🔄 Initializing sample quizzes...")
-    initialize_sample_quizzes()
-    print("✅ Quiz initialization complete")
+    try:
+        initialize_sample_quizzes()
+        print("✅ Quiz initialization complete")
+    except Exception as e:
+        print(f"⚠️ Quiz initialization had issues: {e}")
+        print("💡 You can manually initialize quizzes by visiting /debug/init-quizzes")
     
     # Start ngrok tunnel
     try:
