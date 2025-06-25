@@ -211,13 +211,17 @@
       <div class="resource-title">GeeksforGeeks: Data Science & Analytics</div>
       <div class="resource-desc">Hundreds of free, well-structured tutorials on Data Analytics, Python, Pandas, and more. No login required.</div>
       <a class="resource-btn" href="https://www.geeksforgeeks.org/data-science-tutorial/" target="_blank" data-course-id="data_analytics" data-resource-id="gfg">Open & Learn</a>
-      <a class="quiz-btn" href="{{ url_for('take_quiz', course_id='data_analytics', resource_id='gfg') }}">Take Quiz</a>
+      <a class="quiz-btn {% if analytics_quiz_status['gfg'] %}disabled completed{% endif %}" href="{% if not analytics_quiz_status['gfg'] %}{{ url_for('take_quiz', course_id='data_analytics', resource_id='gfg') }}{% else %}#{% endif %}" {% if analytics_quiz_status['gfg'] %}tabindex="-1" aria-disabled="true" style="pointer-events:none;opacity:0.7;"{% endif %}>
+        {% if analytics_quiz_status['gfg'] %}✔ Quiz Completed{% else %}Take Quiz{% endif %}
+      </a>
     </div>
     <div class="resource-card">
       <div class="resource-title">Kaggle Learn: Data Science Micro-courses</div>
       <div class="resource-desc">Free, interactive micro-courses on Python, Pandas, Data Visualization, and more. No login required to read lessons.</div>
       <a class="resource-btn" href="https://www.kaggle.com/learn/overview" target="_blank" data-course-id="data_analytics" data-resource-id="kaggle">Open & Learn</a>
-      <a class="quiz-btn" href="{{ url_for('take_quiz', course_id='data_analytics', resource_id='kaggle') }}">Take Quiz</a>
+      <a class="quiz-btn {% if analytics_quiz_status['kaggle'] %}disabled completed{% endif %}" href="{% if not analytics_quiz_status['kaggle'] %}{{ url_for('take_quiz', course_id='data_analytics', resource_id='kaggle') }}{% else %}#{% endif %}" {% if analytics_quiz_status['kaggle'] %}tabindex="-1" aria-disabled="true" style="pointer-events:none;opacity:0.7;"{% endif %}>
+        {% if analytics_quiz_status['kaggle'] %}✔ Quiz Completed{% else %}Take Quiz{% endif %}
+      </a>
     </div>
   </div>
 </div>
@@ -238,7 +242,9 @@
       <div class="resource-title">Tableau Official Free Training Videos</div>
       <div class="resource-desc">Official Tableau video tutorials. No certificate, but always free and up-to-date.</div>
       <a class="resource-btn" href="https://www.tableau.com/learn/training/20211" target="_blank" data-course-id="tableau" data-resource-id="tableau">Open & Learn</a>
-      <a class="quiz-btn" href="{{ url_for('take_quiz', course_id='tableau', resource_id='tableau') }}">Take Quiz</a>
+      <a class="quiz-btn {% if tableau_quiz_status['tableau'] %}disabled completed{% endif %}" href="{% if not tableau_quiz_status['tableau'] %}{{ url_for('take_quiz', course_id='tableau', resource_id='tableau') }}{% else %}#{% endif %}" {% if tableau_quiz_status['tableau'] %}tabindex="-1" aria-disabled="true" style="pointer-events:none;opacity:0.7;"{% endif %}>
+        {% if tableau_quiz_status['tableau'] %}✔ Quiz Completed{% else %}Take Quiz{% endif %}
+      </a>
     </div>
   </div>
 </div>
