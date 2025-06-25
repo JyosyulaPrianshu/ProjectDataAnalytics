@@ -826,13 +826,20 @@ def course():
     tableau_progress = db_manager.get_course_progress_percentage(user_email, 'tableau', TABLEAU_RESOURCES)
     # Get user's total points for rewards banner
     total_points = db_manager.get_user_total_points(user_email)
+
+    # Quiz pass status for each resource
+    analytics_quiz_status = {rid: db_manager.has_passed_quiz(user_email, 'data_analytics', rid) for rid in DATA_ANALYTICS_RESOURCES}
+    tableau_quiz_status = {rid: db_manager.has_passed_quiz(user_email, 'tableau', rid) for rid in TABLEAU_RESOURCES}
+
     return render_template(
         'course.html',
         is_community_member=is_community_member,
         user=user_obj,
         analytics_progress=analytics_progress,
         tableau_progress=tableau_progress,
-        total_points=total_points
+        total_points=total_points,
+        analytics_quiz_status=analytics_quiz_status,
+        tableau_quiz_status=tableau_quiz_status
     )
 
 @app.route('/api/mark-resource-opened', methods=['POST'])
