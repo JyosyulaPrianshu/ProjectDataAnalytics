@@ -403,8 +403,8 @@ class DatabaseManager:
             INSERT INTO quizzes (course_id, resource_id, title, description, questions, passing_score, points_reward)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
             '''
-            # Serialize questions to JSON string
-            questions_json = json.dumps(questions)
+            # Serialize questions to JSON string if it's not already
+            questions_json = json.dumps(questions) if not isinstance(questions, str) else questions
             cursor.execute(insert_query, (course_id, resource_id, title, description, questions_json, passing_score, points_reward))
             connection.commit()
             return True
@@ -438,6 +438,27 @@ class DatabaseManager:
             if connection:
                 connection.close()
 
+    def get_quiz_by_id(self, quiz_id):
+        """Get quiz by ID"""
+        connection = None
+        cursor = None
+        try:
+            connection = self.get_connection()
+            if not connection:
+                return None
+            cursor = connection.cursor(cursor_factory=extras.DictCursor)
+            cursor.execute("SELECT * FROM quizzes WHERE id = %s", (quiz_id,))
+            quiz = cursor.fetchone()
+            return dict(quiz) if quiz else None
+        except Exception as e:
+            print(f"❌ Error fetching quiz by ID: {e}")
+            return None
+        finally:
+            if cursor:
+                cursor.close()
+            if connection:
+                connection.close()
+
     def save_quiz_attempt(self, user_email, quiz_id, score, answers, passed):
         """Save a quiz attempt"""
         connection = None
@@ -448,15 +469,96 @@ class DatabaseManager:
                 return False
             cursor = connection.cursor()
             insert_query = '''
-            INSERT INTO quiz_attempts (user_email, quiz_id, score, answers, passed)
+             INSERT INTO quiz_attempts (user_email, quiz_id, score, answers, passed)
             VALUES (%s, %s, %s, %s, %s)
             '''
-            cursor.execute(insert_query, (user_email, quiz_id, score, answers, passed))
+            # Serialize answers to JSON string if it's not already
+            answers_json = json.dumps(answers) if not isinstance(answers, str) else answers
+            cursor.execute(insert_query, (user_email, quiz_id, score, answers_json, passed))
             connection.commit()
             return True
         except Exception as e:
             print(f"❌ Error saving quiz attempt: {e}")
             return False
+        finally:
+            if cursor:
+                cursor.close()
+            if connection:
+                connection.close()
+
+    def get_user_quiz_attempts(self, user_email, quiz_id=None):
+        """Get user's quiz attempts, optionally filtered by quiz_id"""
+        connection = None
+        cursor = None
+        try:
+            connection = self.get_connection()
+            if not connection:
+                return []
+            cursor = connection.cursor(cursor_factory=extras.DictCursor)
+            
+            if quiz_id:
+                cursor.execute('''
+                    SELECT qa.*, q.title, q.course_id, q.resource_id 
+                    FROM quiz_attempts qa
+                    JOIN quizzes q ON qa.quiz_id = q.id
+                    WHERE qa.user_email = %s AND qa.quiz_id = %s
+                    ORDER BY qa.completed_at DESC
+                ''', (user_email, quiz_id))
+            else:
+                cursor.execute('''
+                    SELECT qa.*, q.title, q.course_id, q.resource_id 
+                    FROM quiz_attempts qa
+                    JOIN quizzes q ON qa.quiz_id = q.id
+                    WHERE qa.user_email = %s
+                    ORDER BY qa.completed_at DESC
+                ''', (user_email,))
+            
+            results = cursor.fetchall()
+            return [dict(row) for row in results]
+        except Exception as e:
+            print(f"❌ Error fetching quiz attempts: {e}")
+            return []
+        finally:
+            if cursor:
+                cursor.close()
+            if connection:
+                connection.close()
+
+    def can_retake_quiz(self, user_email, quiz_id):
+        """Check if user can retake a quiz (failed previous attempts)"""
+        attempts = self.get_user_quiz_attempts(user_email, quiz_id)
+        if not attempts:
+            return True  # No attempts yet
+        
+        # Check if latest attempt was failed
+        latest_attempt = attempts[0]  # Most recent first
+        return not latest_attempt['passed']
+
+    def get_quiz_status_for_course(self, user_email, course_id):
+        """Get quiz completion status for all resources in a course"""
+        connection = None
+        cursor = None
+        try:
+            connection = self.get_connection()
+            if not connection:
+                return {}
+            cursor = connection.cursor()
+            
+            # Get all quizzes for the course and their completion status
+            cursor.execute('''
+                SELECT q.resource_id, 
+                       CASE WHEN qa.id IS NOT NULL THEN true ELSE false END as completed
+                FROM quizzes q
+                LEFT JOIN quiz_attempts qa ON q.id = qa.quiz_id 
+                    AND qa.user_email = %s AND qa.passed = true
+                WHERE q.course_id = %s
+            ''', (user_email, course_id))
+            
+            results = cursor.fetchall()
+            return {row[0]: row[1] for row in results}
+        except Exception as e:
+            print(f"❌ Error fetching quiz status: {e}")
+            return {}
         finally:
             if cursor:
                 cursor.close()
@@ -600,27 +702,6 @@ class DatabaseManager:
         except Exception as e:
             print(f"❌ Error fetching tableau uploads: {e}")
             return []
-        finally:
-            if cursor:
-                cursor.close()
-            if connection:
-                connection.close()
-
-    def get_quiz_by_id(self, quiz_id):
-        """Get quiz by ID"""
-        connection = None
-        cursor = None
-        try:
-            connection = self.get_connection()
-            if not connection:
-                return None
-            cursor = connection.cursor(cursor_factory=extras.DictCursor)
-            cursor.execute("SELECT * FROM quizzes WHERE id = %s", (quiz_id,))
-            quiz = cursor.fetchone()
-            return dict(quiz) if quiz else None
-        except Exception as e:
-            print(f"❌ Error fetching quiz by ID: {e}")
-            return None
         finally:
             if cursor:
                 cursor.close()
