@@ -202,7 +202,7 @@
       <div class="options-container">
         {% for option in question.options %}
         <label class="option">
-          <input type="radio" name="q{{ loop.parent.index0 }}" value="{{ loop.index0 }}" required>
+          <input type="radio" name="q{{ loop.index0 }}" value="{{ loop.index0 }}" required>
           {{ option }}
         </label>
         {% endfor %}
