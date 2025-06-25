@@ -210,6 +210,151 @@ def send_welcome_email(name, email):
 # Initialize ngrok manager
 ngrok = NgrokManager()
 
+def initialize_sample_quizzes():
+    """Initialize sample quizzes if they don't exist"""
+    try:
+        print("🔍 Checking for existing quizzes...")
+        
+        # Check if quizzes already exist
+        gfg_quiz = db_manager.get_quiz_by_resource('data_analytics', 'gfg')
+        if not gfg_quiz:
+            print("📝 Creating GeeksforGeeks quiz...")
+            # Add GeeksforGeeks quiz
+            gfg_questions = [
+                {
+                    "question": "What is the primary purpose of data analytics?",
+                    "options": [
+                        "To collect data only",
+                        "To extract meaningful insights from data",
+                        "To store data securely",
+                        "To delete unnecessary data"
+                    ],
+                    "correct_answer": 1
+                },
+                {
+                    "question": "Which Python library is most commonly used for data manipulation in analytics?",
+                    "options": [
+                        "NumPy",
+                        "Pandas",
+                        "Matplotlib",
+                        "Scikit-learn"
+                    ],
+                    "correct_answer": 1
+                },
+                {
+                    "question": "What does ETL stand for in data analytics?",
+                    "options": [
+                        "Extract, Transform, Load",
+                        "Enter, Test, Leave",
+                        "Export, Transfer, Link",
+                        "Execute, Transfer, Load"
+                    ],
+                    "correct_answer": 0
+                }
+            ]
+            success = db_manager.add_quiz('data_analytics', 'gfg', 'Data Analytics Fundamentals Quiz', 
+                               'Test your knowledge of basic data analytics concepts.', gfg_questions, 70, 15)
+            if success:
+                print("✅ Added GeeksforGeeks quiz")
+            else:
+                print("❌ Failed to add GeeksforGeeks quiz")
+        else:
+            print("✅ GeeksforGeeks quiz already exists")
+        
+        kaggle_quiz = db_manager.get_quiz_by_resource('data_analytics', 'kaggle')
+        if not kaggle_quiz:
+            print("📝 Creating Kaggle quiz...")
+            # Add Kaggle quiz
+            kaggle_questions = [
+                {
+                    "question": "What is the correct way to import pandas?",
+                    "options": [
+                        "import pandas",
+                        "import pandas as pd",
+                        "from pandas import *",
+                        "All of the above"
+                    ],
+                    "correct_answer": 1
+                },
+                {
+                    "question": "Which method is used to display the first few rows of a DataFrame?",
+                    "options": [
+                        "df.head()",
+                        "df.first()",
+                        "df.show()",
+                        "df.display()"
+                    ],
+                    "correct_answer": 0
+                },
+                {
+                    "question": "What does the .info() method show?",
+                    "options": [
+                        "Only the column names",
+                        "Data types and non-null counts",
+                        "Statistical summary",
+                        "Correlation matrix"
+                    ],
+                    "correct_answer": 1
+                }
+            ]
+            success = db_manager.add_quiz('data_analytics', 'kaggle', 'Python for Data Science Quiz', 
+                               'Test your Python and data science skills.', kaggle_questions, 70, 15)
+            if success:
+                print("✅ Added Kaggle quiz")
+            else:
+                print("❌ Failed to add Kaggle quiz")
+        else:
+            print("✅ Kaggle quiz already exists")
+        
+        tableau_quiz = db_manager.get_quiz_by_resource('tableau', 'tableau')
+        if not tableau_quiz:
+            print("📝 Creating Tableau quiz...")
+            # Add Tableau quiz
+            tableau_questions = [
+                {
+                    "question": "What is the primary purpose of Tableau?",
+                    "options": [
+                        "Data storage",
+                        "Data visualization and business intelligence",
+                        "Data cleaning",
+                        "Data backup"
+                    ],
+                    "correct_answer": 1
+                },
+                {
+                    "question": "Which Tableau component allows you to connect to data sources?",
+                    "options": [
+                        "Tableau Desktop",
+                        "Tableau Server",
+                        "Tableau Online",
+                        "Tableau Reader"
+                    ],
+                    "correct_answer": 0
+                },
+                {
+                    "question": "What type of chart is best for showing trends over time?",
+                    "options": [
+                        "Pie chart",
+                        "Bar chart",
+                        "Line chart",
+                        "Scatter plot"
+                    ],
+                    "correct_answer": 2
+                }
+            ]
+            success = db_manager.add_quiz('tableau', 'tableau', 'Tableau Data Visualization Quiz', 
+                               'Test your knowledge of Tableau fundamentals.', tableau_questions, 70, 20)
+            if success:
+                print("✅ Added Tableau quiz")
+            else:
+                print("❌ Failed to add Tableau quiz")
+        else:
+            print("✅ Tableau quiz already exists")
+            
+    except Exception as e:
+        print(f"❌ Error initializing quizzes: {e}")
+        print("💡 You can manually initialize quizzes by visiting /admin/init-quizzes (admin only)")
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     user_email = session.get('user_email')
@@ -859,28 +1004,31 @@ def add_quiz():
     
     return render_template('admin_add_quiz.html')
 
+@app.route('/admin/init-quizzes')
+@login_required
+def init_quizzes():
+    if session.get('user_email') != ADMIN_EMAIL:
+        flash('You are not authorized to initialize quizzes.', 'error')
+        return redirect(url_for('index'))
+    
+    initialize_sample_quizzes()
+    flash('Sample quizzes initialized successfully!', 'success')
+    return redirect(url_for('index'))
+
 if __name__ == '__main__':
+    # Initialize database first
+    db_manager.init_database()
+    
+    # Initialize sample quizzes on startup
+    print("🔄 Initializing sample quizzes...")
+    initialize_sample_quizzes()
+    print("✅ Quiz initialization complete")
+    
+    # Start ngrok tunnel
     try:
-        display_startup_info()
-        
-        # Start ngrok tunnel in background thread
-        ngrok_thread = threading.Thread(target=start_ngrok_tunnel, daemon=True)
-        ngrok_thread.start()
-        
-        time.sleep(2)
-        
-        print("🚀 Starting Flask server...")
-        print("🌍 ToyCraft Tales is now live!")
-        print("\n" + "=" * 70)
-        
-        app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)
-        
-    except KeyboardInterrupt:
-        print("\n🛑 Shutting down...")
-        ngrok.stop_tunnel()
-        sys.exit(0)
-        
+        ngrok.start_ngrok()
+        print("✅ Ngrok tunnel started successfully")
     except Exception as e:
-        print(f"\n❌ STARTUP ERROR: {e}")
-        ngrok.stop_tunnel()
-        sys.exit(1)
+        print(f"❌ Failed to start ngrok tunnel: {e}")
+    
+    app.run(debug=True, host='0.0.0.0', port=5000)
