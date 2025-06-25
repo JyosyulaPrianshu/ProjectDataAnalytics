@@ -4,6 +4,7 @@ from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from config import Config
+import json
 
 class Contact:
     """Contact object to make database results more consistent"""
@@ -402,7 +403,9 @@ class DatabaseManager:
             INSERT INTO quizzes (course_id, resource_id, title, description, questions, passing_score, points_reward)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
             '''
-            cursor.execute(insert_query, (course_id, resource_id, title, description, questions, passing_score, points_reward))
+            # Serialize questions to JSON string
+            questions_json = json.dumps(questions)
+            cursor.execute(insert_query, (course_id, resource_id, title, description, questions_json, passing_score, points_reward))
             connection.commit()
             return True
         except Exception as e:
