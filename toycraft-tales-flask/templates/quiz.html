@@ -219,95 +219,92 @@
 </div>
 
 <script>
-document.body.classList.add('quiz-bg');
+document.addEventListener('DOMContentLoaded', function() {
+  document.body.classList.add('quiz-bg');
 
-// Handle option selection
-document.querySelectorAll('.option').forEach(option => {
-  option.addEventListener('click', function() {
-    const radio = this.querySelector('input[type="radio"]');
-    const questionContainer = this.closest('.quiz-question');
-    questionContainer.querySelectorAll('.option').forEach(opt => {
-      opt.classList.remove('selected');
+  // Handle option selection
+  document.querySelectorAll('.option').forEach(option => {
+    option.addEventListener('click', function() {
+      const radio = this.querySelector('input[type="radio"]');
+      const questionContainer = this.closest('.quiz-question');
+      questionContainer.querySelectorAll('.option').forEach(opt => {
+        opt.classList.remove('selected');
+      });
+      this.classList.add('selected');
+      radio.checked = true;
     });
-    this.classList.add('selected');
-    radio.checked = true;
   });
-});
 
-// Handle form submission
-document.getElementById('quizForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  const submitBtn = document.getElementById('submitBtn');
-  submitBtn.disabled = true;
-  submitBtn.textContent = 'Submitting...';
-  const answers = {};
-  const questions = document.querySelectorAll('.quiz-question');
-  questions.forEach((question, index) => {
-    const selectedOption = question.querySelector('input[type="radio"]:checked');
-    if (selectedOption) {
-      answers[index] = parseInt(selectedOption.value);
-    }
-  });
-  fetch('/api/submit-quiz', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      quiz_id: document.getElementById('quizId').value,
-      answers: answers
+  // Handle form submission
+  document.getElementById('quizForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+    const answers = {};
+    const questions = document.querySelectorAll('.quiz-question');
+    questions.forEach((question, index) => {
+      const selectedOption = question.querySelector('input[type="radio"]:checked');
+      if (selectedOption) {
+        answers[index] = parseInt(selectedOption.value);
+      }
+    });
+    fetch('/api/submit-quiz', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        quiz_id: document.getElementById('quizId').value,
+        answers: answers
+      })
     })
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      showResult(data);
-    } else {
-      alert('Error submitting quiz: ' + data.error);
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        showResult(data);
+      } else {
+        alert('Error submitting quiz: ' + data.error);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Quiz';
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Error submitting quiz. Please try again.');
       submitBtn.disabled = false;
       submitBtn.textContent = 'Submit Quiz';
-    }
-  })
-  .catch(error => {
-    console.error('Error:', error);
-    alert('Error submitting quiz. Please try again.');
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Submit Quiz';
+    });
   });
-});
 
-function showResult(data) {
-  const resultContainer = document.getElementById('resultContainer');
-  const resultContent = document.getElementById('resultContent');
-  const quizForm = document.getElementById('quizForm');
-  
-  let resultClass = data.passed ? 'result-passed' : 'result-failed';
-  let resultIcon = data.passed ? '🎉' : '📚';
-  let resultTitle = data.passed ? 'Congratulations! You Passed!' : 'Keep Learning!';
-  let resultMessage = data.passed 
-    ? `You've earned ${data.points_reward || 10} points! Keep up the great work!`
-    : `Don't worry! Review the material and try again. You can do it!`;
-  
-  // Check if course was completed and show achievement message
-  if (data.course_completed && data.achievement_unlocked) {
-    resultClass = 'result-passed';
-    resultIcon = '🏆';
-    resultTitle = 'Achievement Unlocked!';
-    resultMessage = data.message;
-  }
-  
-  resultContent.innerHTML = `
-    <div class="${resultClass}">
-      <div class="result-title">${resultIcon} ${resultTitle}</div>
-      <div class="result-score">${data.score}%</div>
-      <div class="result-details">
-        You got ${data.correct_answers} out of ${data.total_questions} questions correct.<br>
-        ${resultMessage}
-        ${data.total_points ? `<br><br><strong>Total Points: ${data.total_points}</strong>` : ''}
+  function showResult(data) {
+    const resultContainer = document.getElementById('resultContainer');
+    const resultContent = document.getElementById('resultContent');
+    const quizForm = document.getElementById('quizForm');
+    let resultClass = data.passed ? 'result-passed' : 'result-failed';
+    let resultIcon = data.passed ? '🎉' : '📚';
+    let resultTitle = data.passed ? 'Congratulations! You Passed!' : 'Keep Learning!';
+    let resultMessage = data.passed 
+      ? `You've earned ${data.points_reward || 10} points! Keep up the great work!`
+      : `Don't worry! Review the material and try again. You can do it!`;
+    if (data.course_completed && data.achievement_unlocked) {
+      resultClass = 'result-passed';
+      resultIcon = '🏆';
+      resultTitle = 'Achievement Unlocked!';
+      resultMessage = data.message;
+    }
+    resultContent.innerHTML = `
+      <div class="${resultClass}">
+        <div class="result-title">${resultIcon} ${resultTitle}</div>
+        <div class="result-score">${data.score}%</div>
+        <div class="result-details">
+          You got ${data.correct_answers} out of ${data.total_questions} questions correct.<br>
+          ${resultMessage}
+          ${data.total_points ? `<br><br><strong>Total Points: ${data.total_points}</strong>` : ''}
+        </div>
       </div>
-    </div>
-  `;
-  
-  quizForm.style.display = 'none';
-  resultContainer.style.display = 'block';
-}
+    `;
+    quizForm.style.display = 'none';
+    resultContainer.style.display = 'block';
+  }
+});
 </script>
 {% endblock %} 
