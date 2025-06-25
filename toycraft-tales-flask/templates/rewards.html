@@ -1,0 +1,322 @@
+{% extends 'base.html' %}
+{% block title %}My Rewards | ToyCraft Tales{% endblock %}
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  body.rewards-bg {
+    background: #f8fafc;
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+  }
+  .rewards-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+  .rewards-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+  .rewards-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #1f2937;
+    margin-bottom: 1rem;
+  }
+  .rewards-subtitle {
+    font-size: 1.2rem;
+    color: #6b7280;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+  }
+  .stat-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb;
+  }
+  .stat-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+  .stat-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+  }
+  .stat-label {
+    font-size: 1.1rem;
+    color: #6b7280;
+    font-weight: 600;
+  }
+  .achievement-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 2px solid #3b82f6;
+    margin-bottom: 3rem;
+  }
+  .achievement-level {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    color: #1f2937;
+  }
+  .achievement-message {
+    font-size: 1.2rem;
+    color: #6b7280;
+  }
+  .section-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+  .tableau-uploads-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
+  .tableau-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb;
+    transition: transform 0.2s ease;
+  }
+  .tableau-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+  .tableau-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  .tableau-icon {
+    font-size: 2rem;
+    margin-right: 1rem;
+  }
+  .tableau-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #1f2937;
+  }
+  .tableau-description {
+    color: #6b7280;
+    margin-bottom: 1rem;
+  }
+  .tableau-date {
+    font-size: 0.9rem;
+    color: #6b7280;
+    margin-top: 0.5rem;
+  }
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #6b7280;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb;
+  }
+  .empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+  .back-btn {
+    display: inline-block;
+    background: #3b82f6;
+    color: #ffffff;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    margin-top: 2rem;
+    transition: all 0.2s ease;
+  }
+  .back-btn:hover {
+    background: #2563eb;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  }
+  .upload-btn {
+    display: inline-block;
+    background: #10b981;
+    color: #ffffff;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    margin-top: 1rem;
+    transition: all 0.2s ease;
+  }
+  .upload-btn:hover {
+    background: #059669;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+  }
+</style>
+
+<div class="rewards-container">
+  <div class="rewards-header">
+    <h1 class="rewards-title">🎉 My Learning Progress</h1>
+    <p class="rewards-subtitle">Track your progress and celebrate your achievements!</p>
+  </div>
+
+  <div class="stats-grid" style="width:100%; box-sizing:border-box;">
+    <!-- Learning Points Stat -->
+    <div class="stat-card" style="width:100%; box-sizing:border-box;">
+      <div class="stat-label">Learning Points</div>
+      <div class="stat-value">{% if data_analytics_completed %}50{% else %}0{% endif %}</div>
+    </div>
+
+    <!-- Tableau Dashboards Stat -->
+    <div class="stat-card" style="width:100%; box-sizing:border-box;">
+      <div class="stat-label">Tableau Dashboards</div>
+      <div class="stat-value">{{ tableau_uploads|length }}</div>
+    </div>
+  </div>
+    <!-- Professional Progress Circle Card -->
+    <div style="max-width: 340px; margin: 2.5rem auto;">
+      <div style="background: linear-gradient(135deg, #6366f1 0%, #60a5fa 100%);
+                  border-radius: 18px;
+                  box-shadow: 0 6px 32px 0 rgba(99,102,241,0.10);
+                  padding: 2.2rem 1.5rem 1.7rem 1.5rem;
+                  text-align: center;
+                  position: relative;">
+        <div style="margin-bottom: 1.2rem;">
+          <svg width="120" height="120" viewBox="0 0 120 120" style="display:block; margin: 0 auto;">
+            <defs>
+              <linearGradient id="progress-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#fbbf24"/>
+                <stop offset="100%" stop-color="#f59e0b"/>
+              </linearGradient>
+              <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#fbbf24" flood-opacity="0.18"/>
+              </filter>
+            </defs>
+            <!-- Track -->
+            <circle cx="60" cy="60" r="52" fill="none" stroke="#e0e7ff" stroke-width="12"/>
+            <!-- Subtle white overlay -->
+            <circle cx="60" cy="60" r="52" fill="none" stroke="#fff" stroke-width="12" opacity="0.13"/>
+            <!-- Progress -->
+            <circle
+              cx="60"
+              cy="60"
+              r="52"
+              fill="none"
+              stroke="url(#progress-gradient)"
+              stroke-width="12"
+              stroke-linecap="round"
+              stroke-dasharray="326.72,326.72"
+              stroke-dashoffset="{{ 326.72 - (326.72 * (100 if course_completed else 50 if data_analytics_completed else 0) / 100) }}"
+              style="transition:stroke-dashoffset 0.7s cubic-bezier(.4,2,.6,1); filter:url(#shadow);"
+            />
+            <!-- Percentage Text -->
+            <text x="60" y="68" text-anchor="middle" font-size="2.4rem" fill="#fff" font-weight="800" dominant-baseline="middle" style="text-shadow:0 2px 12px rgba(99,102,241,0.13);">
+              {{ 100 if course_completed else 50 if data_analytics_completed else 0 }}%
+            </text>
+          </svg>
+        </div>
+        <div style="font-size: 1.25rem; font-weight: 700; color: #fff; letter-spacing: 0.5px; margin-bottom: 0.2rem;">
+          Course Progress
+        </div>
+        <div style="font-size: 1.05rem; color: #e0e7ff; opacity: 0.92;">
+          {% if course_completed %}
+            All resources and Tableau dashboard completed!
+          {% elif data_analytics_completed %}
+            All learning resources completed. Tableau dashboard not yet uploaded.
+          {% else %}
+            Complete all resources and upload your Tableau dashboard to reach 100%.
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    
+  <!-- Milestone Card -->
+  {% if data_analytics_completed and tableau_uploads|length > 0 %}
+  <div class="card border-success mb-4 shadow-sm" style="max-width:600px;margin:2rem auto 2rem auto;">
+    <div class="card-body text-center">
+      <h4 class="card-title text-success mb-2">🎉 Data Analytics Milestone Achieved!</h4>
+      <p class="card-text">You have completed all Data Analytics resources (including Tableau dashboard) and earned <strong>50 learning points</strong>!</p>
+      <p class="mb-0 text-muted">Stay tuned for more courses and updates coming soon!</p>
+    </div>
+  </div>
+  {% endif %}
+
+  <h2 class="section-title">📊 My Tableau Dashboards</h2>
+  {% if tableau_uploads %}
+  <div class="tableau-uploads-grid">
+    {% for upload in tableau_uploads %}
+    <div class="tableau-card">
+      <div class="tableau-header">
+        <div class="tableau-icon">📊</div>
+        <div>
+          <div class="tableau-title">{{ upload.dashboard_title }}</div>
+          <div class="tableau-date">Uploaded: {{ upload.uploaded_at.strftime('%B %d, %Y') }}</div>
+        </div>
+      </div>
+      <div class="tableau-description">{{ upload.dashboard_description }}</div>
+      <a href="{{ upload.file_url }}" target="_blank" class="back-btn" style="margin-top: 1rem; font-size: 0.9rem; padding: 0.5rem 1rem;">View Dashboard</a>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">📊</div>
+    <h3>No Tableau Dashboards Yet</h3>
+    <p>Upload your Tableau dashboard to earn extra points and showcase your skills!</p>
+    <a href="{{ url_for('upload_tableau') }}" class="upload-btn">Upload Dashboard</a>
+  </div>
+  {% endif %}
+
+  <div style="text-align: center; margin-top: 3rem;">
+    <a href="{{ url_for('course') }}" class="back-btn">Back to Course</a>
+    {% if not tableau_uploads %}
+    <a href="{{ url_for('upload_tableau') }}" class="upload-btn" style="margin-left: 1rem;">Upload Tableau Dashboard</a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Achievement Unlocked Modal -->
+{% if achievement_message %}
+<div class="modal fade show" id="achievementModal" tabindex="-1" aria-labelledby="achievementModalLabel" aria-modal="true" role="dialog" style="display:block; background:rgba(0,0,0,0.4);">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 1.5rem;">
+      <div class="modal-body p-5 bg-white position-relative text-center">
+        <h2 class="fw-bold mb-3 text-success">🏅 Achievement Unlocked!</h2>
+        <p class="mb-4">{{ achievement_message }}</p>
+        <button type="button" class="btn btn-primary" onclick="document.getElementById('achievementModal').style.display='none';">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Add a special reward message for course completion -->
+{% if course_completed %}
+<div class="alert alert-success text-center mt-4" role="alert" style="font-size:1.2rem;">
+  🎓 <strong>Congratulations!</strong> You have completed the entire course and earned <strong>{{ course_completion_points }} points</strong>!
+</div>
+{% endif %}
+
+<script>
+document.body.classList.add('rewards-bg');
+</script>
+{% endblock %} 

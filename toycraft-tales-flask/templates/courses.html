@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}All Courses | ToyCraft Tales{% endblock %}
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  .courses-catalog {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2.5rem;
+    justify-content: center;
+    margin: 3rem auto 2rem auto;
+    max-width: 1200px;
+  }
+  .course-card {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px 0 rgba(99,102,241,0.10);
+    width: 340px;
+    padding: 2.2rem 1.5rem 1.5rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    transition: box-shadow 0.18s, transform 0.18s;
+    border: 2px solid #e0e7ff;
+  }
+  .course-card:hover {
+    box-shadow: 0 12px 40px 0 rgba(80, 80, 180, 0.18);
+    transform: translateY(-6px) scale(1.03);
+    border: 2px solid #6366f1;
+  }
+  .course-image {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+    margin-bottom: 1.2rem;
+    border-radius: 12px;
+    background: #f3f4f6;
+    box-shadow: 0 2px 8px 0 rgba(99,102,241,0.07);
+  }
+  .course-name {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #22223b;
+    margin-bottom: 0.7rem;
+  }
+  .get-started-btn {
+    display: inline-block;
+    background: linear-gradient(90deg, #6366f1 0%, #60a5fa 100%);
+    color: #fff;
+    font-weight: 700;
+    border: none;
+    border-radius: 10px;
+    padding: 0.8rem 1.7rem;
+    font-size: 1.08rem;
+    text-decoration: none;
+    margin-top: 1.2rem;
+    transition: background 0.18s, box-shadow 0.18s;
+    box-shadow: 0 2px 8px 0 rgba(99,102,241,0.10);
+  }
+  .get-started-btn:hover {
+    background: linear-gradient(90deg, #4338ca 0%, #3b82f6 100%);
+    color: #fff;
+    box-shadow: 0 4px 16px 0 rgba(99,102,241,0.16);
+  }
+</style>
+<div class="container">
+  <h1 class="mb-5 text-center" style="font-weight:800;letter-spacing:-1px;">All Learning Courses</h1>
+  <div class="courses-catalog">
+    {% for course in courses %}
+    <div class="course-card">
+      <img src="{{ course.image }}" alt="{{ course.name }}" class="course-image" />
+      <div class="course-name">{{ course.name }}</div>
+      <a href="{{ url_for('course_detail', course_id=course.id) }}" class="get-started-btn">Get Started</a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %} 

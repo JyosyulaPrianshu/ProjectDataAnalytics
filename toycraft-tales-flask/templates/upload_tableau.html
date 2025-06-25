@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+{% block title %}Upload Tableau Dashboard | ToyCraft Tales{% endblock %}
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  body.upload-bg {
+    background: #f8fafc;
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+  }
+  .upload-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    font-family: 'Inter', sans-serif;
+    border: 1px solid #e5e7eb;
+  }
+  .upload-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .upload-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+  }
+  .upload-subtitle {
+    font-size: 1.1rem;
+    color: #6b7280;
+    margin-bottom: 1rem;
+  }
+  .upload-info {
+    background: #f0f9ff;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    border-left: 4px solid #0ea5e9;
+  }
+  .upload-info h4 {
+    color: #0c4a6e;
+    margin-bottom: 0.5rem;
+  }
+  .upload-info p {
+    color: #0369a1;
+    margin-bottom: 0;
+  }
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+  .form-label {
+    display: block;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+  }
+  .form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+    font-family: 'Inter', sans-serif;
+  }
+  .form-input:focus {
+    outline: none;
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  }
+  .form-textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+    font-family: 'Inter', sans-serif;
+    min-height: 120px;
+    resize: vertical;
+  }
+  .form-textarea:focus {
+    outline: none;
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  }
+  .submit-btn {
+    display: block;
+    width: 100%;
+    background: #10b981;
+    color: #ffffff;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 2rem;
+  }
+  .submit-btn:hover {
+    background: #059669;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+  }
+  .back-btn {
+    display: inline-block;
+    background: #6b7280;
+    color: #ffffff;
+    padding: 0.8rem 1.5rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background 0.2s;
+    margin-top: 1rem;
+  }
+  .back-btn:hover {
+    background: #4b5563;
+    color: #ffffff;
+  }
+  .example-section {
+    background: #f9fafb;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    border: 1px solid #e5e7eb;
+  }
+  .example-title {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+  }
+  .example-text {
+    color: #6b7280;
+    font-size: 0.9rem;
+  }
+</style>
+
+<div class="upload-container">
+  <div class="upload-header">
+    <h1 class="upload-title">📊 Upload Tableau Dashboard</h1>
+    <p class="upload-subtitle">Share your Tableau dashboard and earn 25 points!</p>
+  </div>
+
+  <div class="upload-info">
+    <h4>🎯 How it works:</h4>
+    <p>Upload your Tableau dashboard to showcase your data visualization skills. You'll earn 25 points for each dashboard upload!</p>
+  </div>
+
+  <form method="POST">
+    <div class="form-group">
+      <label for="dashboard_title" class="form-label">Dashboard Title *</label>
+      <input type="text" id="dashboard_title" name="dashboard_title" class="form-input" required 
+             placeholder="e.g., Sales Performance Dashboard">
+    </div>
+
+    <div class="form-group">
+      <label for="dashboard_description" class="form-label">Dashboard Description *</label>
+      <textarea id="dashboard_description" name="dashboard_description" class="form-textarea" required
+                placeholder="Describe what your dashboard shows, the key insights, and the data sources used..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="file_url" class="form-label">Dashboard URL *</label>
+      <input type="url" id="file_url" name="file_url" class="form-input" required 
+             placeholder="https://public.tableau.com/views/YourDashboard...">
+    </div>
+
+    <div class="example-section">
+      <div class="example-title">💡 Example:</div>
+      <div class="example-text">
+        <strong>Title:</strong> "Global Sales Performance Dashboard"<br>
+        <strong>Description:</strong> "This dashboard analyzes sales performance across different regions, showing revenue trends, top-performing products, and customer segments. Built using sample sales data with interactive filters for date ranges and product categories."<br>
+        <strong>URL:</strong> "https://public.tableau.com/views/GlobalSalesDashboard/SalesOverview"
+      </div>
+    </div>
+
+    <button type="submit" class="submit-btn">📤 Upload Dashboard & Earn Points</button>
+  </form>
+
+  <div style="text-align: center; margin-top: 2rem;">
+    <a href="{{ url_for('rewards') }}" class="back-btn">Back to Rewards</a>
+  </div>
+</div>
+
+<script>
+document.body.classList.add('upload-bg');
+</script>
+{% endblock %} 

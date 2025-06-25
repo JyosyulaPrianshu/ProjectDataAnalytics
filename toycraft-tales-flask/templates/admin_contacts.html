@@ -1,0 +1,410 @@
+{% extends "base.html" %} {% block title %}Admin - Contact Management{% endblock
+%} {% block content %}
+<div class="admin-section">
+  <div class="container">
+    <div class="admin-header">
+      <h1 class="admin-title">📊 Contact Management</h1>
+      <p class="admin-subtitle">
+        Manage and communicate with your community members
+      </p>
+      <div class="admin-stats">
+        <div class="stat-badge">
+          <span class="stat-number">{{ contacts|length }}</span>
+          <span class="stat-label">Total Contacts</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bulk Email Form -->
+    <div class="bulk-email-section">
+      <button class="toggle-email-btn" onclick="toggleEmailForm()">
+        📧 Send Bulk Email
+      </button>
+
+      <div class="email-form-container" id="emailForm" style="display: none">
+        <form method="POST" action="/send-bulk-email" class="bulk-email-form">
+          <div class="form-group">
+            <label for="subject">Email Subject:</label>
+            <input
+              type="text"
+              id="subject"
+              name="subject"
+              required
+              placeholder="Enter email subject..."
+            />
+          </div>
+          <div class="form-group">
+            <label for="message">Email Message:</label>
+            <textarea
+              id="message"
+              name="message"
+              rows="6"
+              required
+              placeholder="Enter your message to all contacts..."
+            ></textarea>
+          </div>
+          <button type="submit" class="send-email-btn">
+            🚀 Send to All Contacts
+          </button>
+        </form>
+      </div>
+    </div>
+
+    {% if contacts %}
+    <div class="contacts-grid">
+      {% for contact in contacts %}
+      <div class="contact-card">
+        <div class="contact-header">
+          <div class="contact-avatar">{{ contact.name[0].upper() }}</div>
+          <div class="contact-info">
+            <h4 class="contact-name">{{ contact.name }}</h4>
+            <p class="contact-date">
+              {{ contact.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+            </p>
+          </div>
+        </div>
+        <div class="contact-details">
+          <div class="detail-item">
+            <span class="detail-icon">📧</span>
+            <a href="mailto:{{ contact.email }}" class="detail-text"
+              >{{ contact.email }}</a
+            >
+          </div>
+          <div class="detail-item">
+            <span class="detail-icon">📱</span>
+            <a href="tel:{{ contact.phone }}" class="detail-text"
+              >{{ contact.phone }}</a
+            >
+          </div>
+          {% if contact.ip_address %}
+          <div class="detail-item">
+            <span class="detail-icon">🌐</span>
+            <span class="detail-text">{{ contact.ip_address }}</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="no-contacts">
+      <div class="no-contacts-icon">📭</div>
+      <h3>No contacts yet</h3>
+      <p>Contact submissions will appear here when users fill out the form.</p>
+    </div>
+    {% endif %} {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-messages">
+      {% for category, message in messages %}
+      <div class="flash-message flash-{{ category }}">
+        <span class="flash-icon">
+          {% if category == 'success' %}✅{% else %}❌{% endif %}
+        </span>
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %} {% endwith %}
+  </div>
+</div>
+
+<style>
+  .admin-section {
+    padding: 2rem 0;
+    min-height: 80vh;
+  }
+
+  .admin-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .admin-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 1rem;
+  }
+
+  .admin-subtitle {
+    color: #666;
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+  }
+
+  .admin-stats {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+  }
+
+  .stat-badge {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 15px;
+    text-align: center;
+  }
+
+  .stat-number {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+  }
+
+  .bulk-email-section {
+    max-width: 600px;
+    margin: 0 auto 3rem;
+  }
+
+  .toggle-email-btn {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.3s ease;
+  }
+
+  .toggle-email-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(72, 187, 120, 0.3);
+  }
+
+  .email-form-container {
+    margin-top: 1.5rem;
+    background: white;
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+  }
+
+  .bulk-email-form .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .bulk-email-form label {
+    display: block;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+  }
+
+  .bulk-email-form input,
+  .bulk-email-form textarea {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+    box-sizing: border-box;
+  }
+
+  .bulk-email-form input:focus,
+  .bulk-email-form textarea:focus {
+    outline: none;
+    border-color: #667eea;
+  }
+
+  .send-email-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.3s ease;
+  }
+
+  .send-email-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+  }
+
+  .contacts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 2rem;
+  }
+
+  .contact-card {
+    background: white;
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+  }
+
+  .contact-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+  }
+
+  .contact-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .contact-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-right: 1rem;
+  }
+
+  .contact-info {
+    flex: 1;
+  }
+
+  .contact-name {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .contact-date {
+    margin: 0.3rem 0 0 0;
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  .contact-details {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .detail-item {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .detail-icon {
+    font-size: 1.2rem;
+    width: 25px;
+    text-align: center;
+  }
+
+  .detail-text {
+    color: #333;
+    text-decoration: none;
+    flex: 1;
+    font-weight: 500;
+  }
+
+  .detail-text:hover {
+    color: #667eea;
+  }
+
+  .no-contacts {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #666;
+  }
+
+  .no-contacts-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+
+  .no-contacts h3 {
+    color: #333;
+    margin-bottom: 1rem;
+  }
+
+  .flash-messages {
+    max-width: 600px;
+    margin: 2rem auto;
+  }
+
+  .flash-message {
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+  }
+
+  .flash-success {
+    background: #f0fff4;
+    color: #2f855a;
+    border: 1px solid #9ae6b4;
+  }
+
+  .flash-error {
+    background: #fff5f5;
+    color: #c53030;
+    border: 1px solid #feb2b2;
+  }
+
+  .flash-icon {
+    font-size: 1.2rem;
+  }
+
+  @media (max-width: 768px) {
+    .contacts-grid {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    .contact-card {
+      padding: 1.5rem;
+    }
+
+    .admin-title {
+      font-size: 2rem;
+    }
+
+    .bulk-email-section {
+      margin: 0 1rem 3rem;
+    }
+  }
+</style>
+
+<script>
+  function toggleEmailForm() {
+    const form = document.getElementById("emailForm");
+    const btn = document.querySelector(".toggle-email-btn");
+
+    if (form.style.display === "none" || form.style.display === "") {
+      form.style.display = "block";
+      btn.textContent = "❌ Cancel Email";
+      btn.style.background =
+        "linear-gradient(135deg, #f56565 0%, #e53e3e 100%)";
+    } else {
+      form.style.display = "none";
+      btn.textContent = "📧 Send Bulk Email";
+      btn.style.background =
+        "linear-gradient(135deg, #48bb78 0%, #38a169 100%)";
+    }
+  }
+</script>
+{% endblock %}

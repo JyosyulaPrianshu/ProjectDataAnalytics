@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Certificate of Completion</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f4f8fb;
+            color: #222;
+            margin: 0;
+            padding: 0;
+        }
+        .certificate-container {
+            width: 800px;
+            height: 600px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+            border: 8px solid #667eea;
+            position: relative;
+            overflow: hidden;
+        }
+        .certificate-header {
+            background: linear-gradient(90deg, #667eea 0%, #21d4fd 100%);
+            color: #fff;
+            padding: 32px 0 16px 0;
+            text-align: center;
+        }
+        .certificate-header img {
+            height: 60px;
+            margin-bottom: 10px;
+        }
+        .certificate-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+        .certificate-body {
+            padding: 40px 60px 20px 60px;
+            text-align: center;
+        }
+        .certify {
+            font-size: 1.2rem;
+            margin-bottom: 16px;
+            color: #555;
+        }
+        .user-name {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 12px;
+        }
+        .course-name {
+            font-size: 1.3rem;
+            font-weight: 500;
+            color: #21d4fd;
+            margin-bottom: 24px;
+        }
+        .date {
+            font-size: 1.1rem;
+            color: #888;
+            margin-top: 24px;
+        }
+        .certificate-footer {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: #f4f8fb;
+            text-align: center;
+            padding: 12px 0;
+            font-size: 1rem;
+            color: #667eea;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+    <div class="certificate-container">
+        <div class="certificate-header">
+            <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/render.svg" alt="Render Logo" />
+            <div class="certificate-title">Certificate of Completion</div>
+        </div>
+        <div class="certificate-body">
+            <div class="certify">This is to certify that</div>
+            <div class="user-name">{{ user_name }}</div>
+            <div class="certify">has successfully completed the course</div>
+            <div class="course-name">{{ course_name }}</div>
+            <div class="date">Date: {{ completion_date }}</div>
+        </div>
+        <div class="certificate-footer">
+            Data Analytics Learning Platform &bull; Powered by Render
+        </div>
+    </div>
+</body>
+</html> 
