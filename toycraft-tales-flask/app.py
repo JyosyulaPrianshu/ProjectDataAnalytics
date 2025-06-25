@@ -12,6 +12,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from database import db_manager
 from functools import wraps
+import json
 
 app = Flask(__name__)
 app.secret_key = 'ToyCraft2024!DataViz#Analytics$SecureKey789'
@@ -678,12 +679,15 @@ def course():
     # Calculate progress for each course section
     analytics_progress = db_manager.get_course_progress_percentage(user_email, 'data_analytics', DATA_ANALYTICS_RESOURCES)
     tableau_progress = db_manager.get_course_progress_percentage(user_email, 'tableau', TABLEAU_RESOURCES)
+    # Get user's total points for rewards banner
+    total_points = db_manager.get_user_total_points(user_email)
     return render_template(
         'course.html',
         is_community_member=is_community_member,
         user=user_obj,
         analytics_progress=analytics_progress,
-        tableau_progress=tableau_progress
+        tableau_progress=tableau_progress,
+        total_points=total_points
     )
 
 @app.route('/api/mark-resource-opened', methods=['POST'])
@@ -707,6 +711,153 @@ def get_course_progress():
         return jsonify({'success': False, 'error': 'Missing course_id'}), 400
     opened_resources = db_manager.get_course_progress(user_email, course_id)
     return jsonify({'success': True, 'opened_resources': opened_resources})
+
+@app.route('/quiz/<course_id>/<resource_id>')
+@login_required
+def take_quiz(course_id, resource_id):
+    user_email = session.get('user_email')
+    quiz = db_manager.get_quiz_by_resource(course_id, resource_id)
+    if not quiz:
+        flash('No quiz available for this resource.', 'info')
+        return redirect(url_for('course'))
+    return render_template('quiz.html', quiz=quiz, course_id=course_id, resource_id=resource_id)
+
+@app.route('/api/submit-quiz', methods=['POST'])
+@login_required
+def submit_quiz():
+    data = request.get_json()
+    quiz_id = data.get('quiz_id')
+    answers = data.get('answers')
+    user_email = session.get('user_email')
+    
+    if not quiz_id or not answers:
+        return jsonify({'success': False, 'error': 'Missing quiz data'}), 400
+    
+    # Get quiz details
+    quiz = db_manager.get_quiz_by_id(quiz_id)
+    if not quiz:
+        return jsonify({'success': False, 'error': 'Quiz not found'}), 404
+    
+    # Calculate score
+    questions = quiz['questions']
+    correct_answers = 0
+    total_questions = len(questions)
+    
+    for i, question in enumerate(questions):
+        if str(i) in answers and answers[str(i)] == question['correct_answer']:
+            correct_answers += 1
+    
+    score = int((correct_answers / total_questions) * 100)
+    passed = score >= quiz['passing_score']
+    
+    # Save quiz attempt
+    db_manager.save_quiz_attempt(user_email, quiz_id, score, answers, passed)
+    
+    # Add rewards if passed
+    if passed:
+        # Points reward
+        db_manager.add_user_reward(user_email, 'points', quiz['points_reward'], f"Completed quiz: {quiz['title']}")
+        
+        # Check if course is completed and show achievement message
+        course_id = quiz['course_id']
+        if db_manager.is_course_completed(user_email, course_id):
+            # Award course completion points
+            db_manager.add_user_reward(user_email, 'points', 50, f"Course completion: {course_id}")
+            
+            # Get achievement level
+            total_points = db_manager.get_user_total_points(user_email)
+            level, message = db_manager.get_achievement_level(total_points)
+            
+            return jsonify({
+                'success': True,
+                'score': score,
+                'passed': passed,
+                'correct_answers': correct_answers,
+                'total_questions': total_questions,
+                'passing_score': quiz['passing_score'],
+                'course_completed': True,
+                'achievement_unlocked': True,
+                'level': level,
+                'message': f"🎉 Achievement Unlocked! You've mastered {course_id.replace('_', ' ').title()}! {message} Stay tuned for new learning courses!",
+                'total_points': total_points
+            })
+    
+    return jsonify({
+        'success': True,
+        'score': score,
+        'passed': passed,
+        'correct_answers': correct_answers,
+        'total_questions': total_questions,
+        'passing_score': quiz['passing_score']
+    })
+
+@app.route('/rewards')
+@login_required
+def rewards():
+    user_email = session.get('user_email')
+    total_points = db_manager.get_user_total_points(user_email)
+    level, level_message = db_manager.get_achievement_level(total_points)
+    tableau_uploads = db_manager.get_user_tableau_uploads(user_email)
+    
+    return render_template('rewards.html', 
+                         total_points=total_points,
+                         level=level,
+                         level_message=level_message,
+                         tableau_uploads=tableau_uploads)
+
+@app.route('/upload-tableau', methods=['GET', 'POST'])
+@login_required
+def upload_tableau():
+    user_email = session.get('user_email')
+    
+    if request.method == 'POST':
+        dashboard_title = request.form.get('dashboard_title')
+        dashboard_description = request.form.get('dashboard_description')
+        file_url = request.form.get('file_url')  # For now, just a URL field
+        
+        if not all([dashboard_title, dashboard_description, file_url]):
+            flash('All fields are required.', 'error')
+        else:
+            success = db_manager.upload_tableau_dashboard(user_email, dashboard_title, dashboard_description, file_url)
+            if success:
+                flash('🎉 Dashboard uploaded successfully! You earned 25 points!', 'success')
+                return redirect(url_for('rewards'))
+            else:
+                flash('You have already uploaded a dashboard for this course.', 'info')
+    
+    return render_template('upload_tableau.html')
+
+# Admin route to add quizzes
+@app.route('/admin/add-quiz', methods=['GET', 'POST'])
+@login_required
+def add_quiz():
+    if session.get('user_email') != ADMIN_EMAIL:
+        flash('You are not authorized to add quizzes.', 'error')
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        course_id = request.form.get('course_id')
+        resource_id = request.form.get('resource_id')
+        title = request.form.get('title')
+        description = request.form.get('description')
+        questions_json = request.form.get('questions')
+        passing_score = int(request.form.get('passing_score', 70))
+        points_reward = int(request.form.get('points_reward', 10))
+        
+        if not questions_json:
+            flash('Questions are required.', 'error')
+        else:
+            try:
+                questions = json.loads(questions_json)
+                success = db_manager.add_quiz(course_id, resource_id, title, description, questions, passing_score, points_reward)
+                if success:
+                    flash('Quiz added successfully!', 'success')
+                else:
+                    flash('Failed to add quiz.', 'error')
+            except json.JSONDecodeError:
+                flash('Invalid questions format.', 'error')
+    
+    return render_template('admin_add_quiz.html')
 
 if __name__ == '__main__':
     try:
